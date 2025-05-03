@@ -7,7 +7,7 @@ import time, signal, subprocess, os
 BUTTON_PIN = 17
 
 RECORDING_PATH = "/home/giymo11/dev/ohrgarten/recordings"
-BEEP_PATH = RECORDING_PATH / "beep.wav"
+BEEP_PATH = RECORDING_PATH + "/beep.wav"
 
 ARECORD_CMD = [
     "arecord",
@@ -101,9 +101,9 @@ def stop_recording():
 
 
 def play_beep():
-    if not BEEP_PATH.is_file():
-        print(f"Warning: Beep file not found at {BEEP_PATH}")
-        return
+    # if not BEEP_PATH.is_file():
+    #     print(f"Warning: Beep file not found at {BEEP_PATH}")
+    #     return
 
     print("Playing beep...")
     try:
