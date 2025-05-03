@@ -3,6 +3,7 @@ from gpiozero import Button
 from signal import pause
 from datetime import datetime
 import time, signal, subprocess, os
+from pathlib import Path
 
 BUTTON_PIN = 17
 RST_BUTTON_PIN = 27
@@ -28,8 +29,6 @@ os.makedirs(RECORDING_PATH, exist_ok=True)
 
 # Use the BCM pin number (GPIO 17, physical pin 11)
 button = Button(BUTTON_PIN, pull_up=True, bounce_time=0.1)
-
-rst_button = Button(RST_BUTTON_PIN, pull_up=True, bounce_time=0.1)
 
 rst_button = Button(RST_BUTTON_PIN, pull_up=True, bounce_time=0.1)
 
