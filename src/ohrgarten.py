@@ -20,11 +20,59 @@ APLAY_CMD = ["aplay", "-D", "plughw:2,0"] # Use default output device
 # Global variable to hold the recording process instance
 recording_process = None
 current_filename = ""
+recorded_files = []
 
 os.makedirs(RECORDING_PATH, exist_ok=True)
 
 # Use the BCM pin number (GPIO 17, physical pin 11)
 button = Button(BUTTON_PIN, pull_up=True, bounce_time=0.1)
+
+def load_recordings():
+    """Scans the RECORDING_PATH for .wav files and populates the recorded_files list."""
+    global recorded_files
+    recorded_files = [] 
+
+    path = Path(RECORDING_PATH)
+    print(f"Scanning for recordings in: {path}...")
+    if not path.is_dir():
+        print(f"Warning: Recording directory {path} does not exist. Creating.")
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            print(f"Error creating directory {path}: {e}")
+            return # Cannot proceed without the directory
+
+    count = 0
+    for item in path.iterdir():
+        if item.is_file() and item.suffix.lower() == ".wav":
+            recorded_files.append(item) 
+            count += 1
+    recorded_files.sort() # Sort alphabetically/chronologically if names allow
+    print(f"Found {count} existing recordings.")
+    # print(f"Loaded file list: {[f.name for f in recorded_files]}")
+
+
+def reset_recordings():
+    global recorded_files
+    
+    print("Clearing the in-memory list of tracked recordings.")
+    recorded_files.clear() 
+    
+    path = Path(RECORDING_PATH)
+    for item in path.iterdir():
+        try:
+            if item.is_file() and item.suffix.lower() == ".wav":
+                item.unlink() # Delete the file
+        except PermissionError:
+            print(f"Failed (Permission denied). Check permissions for {file_path}")
+            failure_count += 1
+        except OSError as e:
+             print(f"Failed (OS Error: {e}).") # Catch other potential file system errors
+             failure_count += 1
+        except Exception as e:
+            print(f"Failed (Unexpected Error: {e}).")
+            failure_count += 1
+    
 
 def start_recording():
     """Starts the arecord process."""
