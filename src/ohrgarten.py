@@ -5,13 +5,17 @@ from datetime import datetime
 import time, signal, subprocess, os
 
 BUTTON_PIN = 17
+
 RECORDING_PATH = "/home/giymo11/dev/ohrgarten/recordings"
+BEEP_PATH = RECORDING_PATH / "beep.wav"
+
 ARECORD_CMD = [
     "arecord",
     "-f", "cd",       # Record in CD quality (16-bit little endian, 44100 Hz, Stereo)
     "-t", "wav",      # Save as WAV file type
     "-D", "plughw:2,0",  # find from 'arecord -l'
 ]
+APLAY_CMD = ["aplay", "-D", "plughw:2,0"] # Use default output device
 
 # Global variable to hold the recording process instance
 recording_process = None
@@ -89,9 +93,33 @@ def stop_recording():
 
         # Reset the global variable
         recording_process = None
+        
+        play_beep()
         current_filename = ""
     else:
         print("Not currently recording.")
+
+
+def play_beep():
+    if not BEEP_PATH.is_file():
+        print(f"Warning: Beep file not found at {BEEP_PATH}")
+        return
+
+    print("Playing beep...")
+    try:
+        # Run aplay and wait for it to complete. Capture output to hide it unless error.
+        cmd = APLAY_CMD + [str(BEEP_PATH)] # Convert Path object to string for subprocess
+        subprocess.run(cmd, check=True, capture_output=True, timeout=5) # Check=True raises error on fail
+        print("Beep finished.")
+    except FileNotFoundError:
+         print("Error: 'aplay' command not found. Is alsa-utils installed?")
+    except subprocess.CalledProcessError as e:
+        print(f"Error playing beep using aplay: {e}")
+        print(f"Stderr: {e.stderr.decode('utf-8', errors='ignore')}")
+    except subprocess.TimeoutExpired:
+        print("Error: Timeout playing beep sound.")
+    except Exception as e:
+        print(f"An unexpected error occurred during beep playback: {e}")
 
 button.when_pressed = start_recording
 button.when_released = stop_recording
