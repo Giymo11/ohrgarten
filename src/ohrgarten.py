@@ -31,7 +31,7 @@ def start_recording():
     global recording_process
     global current_filename
 
-    if recording_process is None: 
+    if recording_process is None and current_filename == '': 
         try:
             # Generate a unique filename with timestamp
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
