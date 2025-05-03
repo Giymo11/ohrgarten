@@ -5,9 +5,11 @@ from datetime import datetime
 import time, signal, subprocess, os
 
 BUTTON_PIN = 17
+RST_BUTTON_PIN = 27
 
 RECORDING_PATH = "/home/giymo11/dev/ohrgarten/recordings"
-BEEP_FILE = RECORDING_PATH + "/beep.wav"
+SFX_PATH = "/home/giymo11/dev/ohrgarten/sfx"
+BEEP_FILE = SFX_PATH + "/beep.wav"
 
 ARECORD_CMD = [
     "arecord",
@@ -25,6 +27,8 @@ os.makedirs(RECORDING_PATH, exist_ok=True)
 
 # Use the BCM pin number (GPIO 17, physical pin 11)
 button = Button(BUTTON_PIN, pull_up=True, bounce_time=0.1)
+
+rst_button = Button(RST_BUTTON_PIN, pull_up=True, bounce_time=0.1)
 
 def start_recording():
     """Starts the arecord process."""
@@ -122,8 +126,12 @@ def play_sound(filename):
     except Exception as e:
         print(f"An unexpected error occurred during beep playback: {e}")
 
+
+
+
 button.when_pressed = start_recording
 button.when_released = stop_recording
+rst_button.when_pressed = reset_recordings
 
 # --- Main loop ---
 print(f"Press and hold button to record.")
