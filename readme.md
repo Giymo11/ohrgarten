@@ -20,6 +20,7 @@ use `pip freeze > requirements.txt` to record the dependencies
 
 use setup.sh to install dependencies: `chmod +x setup.sh && ./setup.sh`
 
+# notes
 
 
 
