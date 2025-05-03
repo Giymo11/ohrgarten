@@ -7,7 +7,7 @@ import time, signal, subprocess, os
 BUTTON_PIN = 17
 
 RECORDING_PATH = "/home/giymo11/dev/ohrgarten/recordings"
-BEEP_FILE = "beep.wav"
+BEEP_FILE = RECORDING_PATH + "/beep.wav"
 
 ARECORD_CMD = [
     "arecord",
@@ -109,7 +109,7 @@ def play_sound(filename):
     print(f"Playing {filename}...")
     try:
         # Run aplay and wait for it to complete. Capture output to hide it unless error.
-        cmd = APLAY_CMD + ["/" + filename)]
+        cmd = APLAY_CMD + [filename]
         subprocess.run(cmd, check=True, capture_output=True, timeout=5) # Check=True raises error on fail
         print("Beep finished.")
     except FileNotFoundError:
