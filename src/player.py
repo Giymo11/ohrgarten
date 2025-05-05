@@ -98,7 +98,8 @@ class Player:
             if not self.buffer:
                 time.sleep(0.1)
                 continue
-
+                
+            # TODO!: fix random playback after pressing skip
             # pick next index
             with self._lock:
                 current = self._idx

@@ -154,7 +154,9 @@ class Recorder:
             self.cmd.play_sound(self.BEEP)
             self.cmd.play_sound(self.current_filename)
 
-            time.sleep(2)
+
+            self.buffer.append(self.current_filename)
+            time.sleep(1)
 
 
         else:
