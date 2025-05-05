@@ -11,11 +11,11 @@ recording_config:
   ARECORD_CMD: 
     - "arecord"
     - "-f"
-    - "cd"
+    - "cd"  # Record in CD quality (16-bit little endian, 44100 Hz, Stereo)
     - "-t"
-    - "wav"
+    - "wav"  # Save as WAV file type
     - "-D"
-    - "plughw:2,0"
+    - "plughw:2,0" # find from 'arecord -l'
 
   APLAY_CMD:
     - "aplay"
