@@ -1,15 +1,19 @@
 from config import ButtonConfig
 from gpiozero import Button
-from callables import CmdTyping
+from cmd_typing import CmdTyping
 import asyncio
 from asyncio import Event
 from concurrent.futures import Future
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from cmd_typing import CmdTyping
 
 class ButtonManager:
 
-    def __init__(self, button_cfg: ButtonConfig, cmd: CmdTyping, event_loop):
+    def __init__(self, button_cfg: ButtonConfig, event_loop):
         
-        self.cmd: CmdTyping = cmd
+
 
         self.button: Button = self._initialize_button(button_cfg.BUTTON_PIN)
         self.reset_button: Button = self._initialize_button(button_cfg.RST_BUTTON_PIN)
@@ -17,13 +21,16 @@ class ButtonManager:
 
         self.button.when_pressed = self.button_interaction_wrapper
         #button.when_released = stop_recording
-        self.reset_button.when_pressed = cmd.reset_recordings
 
 
         self.btn_interaction_resolver: Future | None = None
         self.btn_release_event = Event()
         self.event_loop: asyncio.AbstractEventLoop = event_loop
 
+
+    def inject_cmd(self, cmd:"CmdTyping"):
+        self.cmd = cmd
+        self.reset_button.when_pressed = cmd.reset_recordings
 
     def _initialize_button(self, pin: int) -> Button:
         return Button(pin, pull_up=True, bounce_time=0.1)

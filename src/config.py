@@ -12,9 +12,15 @@ class RecordingConfig:
     SFX_PATH: Final[str]
     BEEP_FILE: Final[str]
     ARECORD_CMD: Final[List[str]]
+
+
+@dataclass
+class PlayerConfig:
     APLAY_CMD:  Final[List[str]]
 
+# wrap everything under 1 config
 @dataclass
 class Config:
     btn_cfg: ButtonConfig
     rec_cfg: RecordingConfig
+    ply_cfg: PlayerConfig

@@ -1,11 +1,12 @@
 from recorder import Recorder
+from player import Player
 from btn_manager import ButtonManager
-from callables import CmdRegistry
+#from callables import CmdTyping
 from datetime import datetime
 from pathlib import Path
 import asyncio
 import yaml
-from config import Config, ButtonConfig, RecordingConfig
+from config import Config, ButtonConfig, RecordingConfig, PlayerConfig
 
 # Initialize
 
@@ -13,7 +14,8 @@ from config import Config, ButtonConfig, RecordingConfig
 conf:dict = yaml.safe_load(open("config.yaml"))
 settings = Config(
     btn_cfg = ButtonConfig(**conf.get("button_config",{})),
-    rec_cfg = RecordingConfig(**conf.get("recording_config",{}))
+    rec_cfg = RecordingConfig(**conf.get("recorder_config",{})),
+    ply_cfg = PlayerConfig(**conf.get("player_config", {}))
 )
 
 
@@ -22,24 +24,34 @@ event_loop = asyncio.new_event_loop()
 asyncio.set_event_loop(event_loop)
 
 
-# Global variable to hold the recording process instance
-
-current_filename = ""
-
-
 
 # Initialize Recorder
 recorder = Recorder(rec_cfg = settings.rec_cfg)
 
-# Initialize Command container
-cmd = CmdRegistry(recorder)
-
+# Initialize Player
+player = Player(ply_cfg = settings.ply_cfg)
 
 # Initialize Buttons
 btn_manager = ButtonManager(button_cfg = settings.btn_cfg,
-                            cmd = cmd,
                             event_loop = event_loop)
 
+class CmdRegistry:
+    def __init__(self,
+                 recorder: Recorder,
+                 player:   Player,
+                 buttons:  ButtonManager):
+        self.reset_recordings = recorder.reset_recordings
+        self.start_recording = recorder.start_recording
+        self.skip_recording = recorder.skip_recording
+        self.stop_recording = recorder.stop_recording
+        self.play_sound = player.play_sound
+
+        recorder.inject_cmd(self)
+        buttons.inject_cmd(self)
+
+
+# Initialize Command container allowing cross instance access of selected methods without importing whole classes
+cmd = CmdRegistry(recorder, player, btn_manager)
 
 # --- Main loop ---
 print(f"Press and hold button to record.")

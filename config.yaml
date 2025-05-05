@@ -2,7 +2,7 @@ button_config:
   BUTTON_PIN: 17
   RST_BUTTON_PIN: 27
 
-recording_config:
+recorder_config:
   RECORDING_PATH: recordings
   SFX_PATH: sfx
   BEEP_FILE: beep.wav
@@ -17,6 +17,7 @@ recording_config:
     - "-D"
     - "plughw:2,0" # find from 'arecord -l'
 
+player_config:
   APLAY_CMD:
     - "aplay"
     - "-D"
