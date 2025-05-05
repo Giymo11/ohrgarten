@@ -29,6 +29,8 @@ class Recorder:
     def inject_cmd(self, cmd:"CmdTyping"):
         self.cmd = cmd
 
+    def get_rec_buffer(self) -> list:
+        return self.buffer
 
     def get_rec_process(self) -> subprocess.Popen | None:
         return self.recording_process
@@ -80,8 +82,12 @@ class Recorder:
 
     def start_recording(self):
         """Starts the arecord process."""
+        self.cmd.pause_player()
         self.cmd.play_sound(self.BEEP)
         if self.recording_process is None: 
+            
+
+
             try:
                 # Generate a unique filename with timestamp
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -148,8 +154,13 @@ class Recorder:
             self.cmd.play_sound(self.BEEP)
             self.cmd.play_sound(self.current_filename)
 
+            time.sleep(2)
+
+
         else:
             print("Not currently recording.")
+
+        self.cmd.resume_player()
 
 
     #def supress_background_noise(self, filename):
@@ -198,5 +209,3 @@ class Recorder:
 
 
 
-    def skip_recording(self):
-        print(f"Skipping recording {self.current_filename}")

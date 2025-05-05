@@ -66,7 +66,7 @@ class ButtonManager:
                 # use this to supress warnings regarding ``if self.button.when_released:``
                 # Check to avoid warning on assigning None to previously None callback
                 self.button.when_released = None
-            self.cmd.skip_recording()
+            self.cmd.skip_player()
         else:
             # Button is still held after 1 second = long press
             self.button.when_released = self.cmd.stop_recording 

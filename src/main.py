@@ -7,6 +7,7 @@ from pathlib import Path
 import asyncio
 import yaml
 from config import Config, ButtonConfig, RecordingConfig, PlayerConfig
+import threading
 
 # Initialize
 
@@ -42,12 +43,19 @@ class CmdRegistry:
                  buttons:  ButtonManager):
         self.reset_recordings = recorder.reset_recordings
         self.start_recording = recorder.start_recording
-        self.skip_recording = recorder.skip_recording
+
         self.stop_recording = recorder.stop_recording
         self.play_sound = player.play_sound
+        self.get_rec_buffer = recorder.get_rec_buffer
+        self.pause_player = player.pause_player
+        self.resume_player = player.resume_player
+        self.skip_player = player.skip_player
+        
 
-        recorder.inject_cmd(self)
-        buttons.inject_cmd(self)
+        recorder.inject_cmd(self) # type: ignore
+        player.inject_cmd(self) # type: ignore
+        buttons.inject_cmd(self) # type: ignore
+        
 
 
 # Initialize Command container allowing cross instance access of selected methods without importing whole classes
@@ -67,6 +75,10 @@ print("Press Ctrl+C to exit.")
 # on button press trigger event that skip track
 # on button hold, stop all playback and start recording
 if __name__ == "__main__":
+
+
+    threading.Thread(target=player.play_forever, daemon=True).start()
+
     try:
         # Keep the script running to listen for button events
         #signal.pause()
@@ -75,6 +87,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nCtrl+C detected. Exiting...")
     finally:
+        # Stop and terminate player loop
+        player.stop_player()
         # Ensure recording stops if the script exits while recording
         if (proc := recorder.get_rec_process()) is not None and proc.poll() is None:
             print("Cleaning up active recording process...")
