@@ -5,7 +5,6 @@ from datetime import datetime
 import time, signal, subprocess, os
 
 
-
 class Recorder:
     
     def __init__(self, rec_cfg: RecordingConfig):
@@ -137,11 +136,39 @@ class Recorder:
             # Reset the global variable
             self.recording_process = None
             
+            #self.supress_background_noise(self.current_filename)
+
             self.play_sound(self.BEEP)
             self.play_sound(self.current_filename)
 
         else:
             print("Not currently recording.")
+
+
+    #def supress_background_noise(self, filename):
+
+        # wf = wave.open(filename, "rb")
+        # assert wf.getframerate() in (8000, 16000, 32000, 48000)
+        # assert wf.getnchannels() == 1 and wf.getsampwidth() == 2
+
+        # vad = webrtcvad.Vad(2)
+        # sr = wf.getframerate()
+        # frame_ms      = 20
+        # frame_samples = int(sr * frame_ms / 1000)
+        # frame_bytes   = frame_samples * wf.getsampwidth()
+
+        # out = wave.open(filename + '1.wav', "wb")
+        # out.setparams(wf.getparams())
+
+        # while True:
+        #     data = wf.readframes(frame_samples)
+        #     if len(data) < frame_bytes:
+        #         break
+        #     if vad.is_speech(data, sr):
+        #         out.writeframes(data)
+
+        # wf.close()
+        # out.close()
 
 
     def play_sound(self, filename):

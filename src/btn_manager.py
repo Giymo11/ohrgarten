@@ -49,6 +49,9 @@ class ButtonManager:
             return_when=asyncio.FIRST_COMPLETED
         )
 
+        for task in pending:
+            task.cancel()
+
         if self.btn_release_event.is_set():
             # Button was released before 1 second = short press
 
