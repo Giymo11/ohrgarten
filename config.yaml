@@ -1,0 +1,23 @@
+button_config:
+  BUTTON_PIN: 17
+  RST_BUTTON_PIN: 27
+
+recording_config:
+  RECORDING_PATH: recordings
+  SFX_PATH: sfx
+  BEEP_FILE: beep.wav
+
+
+  ARECORD_CMD: 
+    - "arecord"
+    - "-f"
+    - "cd"
+    - "-t"
+    - "wav"
+    - "-D"
+    - "plughw:2,0"
+
+  APLAY_CMD:
+    - "aplay"
+    - "-D"
+    - "plughw:2,0" # Use default output device
