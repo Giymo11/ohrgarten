@@ -10,7 +10,7 @@ from config import Config, ButtonConfig, RecordingConfig
 # Initialize
 
 # load config
-conf:dict = yaml.safe_load(open("config.yml"))
+conf:dict = yaml.safe_load(open("config.yaml"))
 settings = Config(
     btn_cfg = ButtonConfig(**conf.get("button_config",{})),
     rec_cfg = RecordingConfig(**conf.get("recording_config",{}))
