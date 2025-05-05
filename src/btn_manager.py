@@ -20,7 +20,7 @@ class ButtonManager:
         self.reset_button.when_pressed = cmd.reset_recordings
 
 
-        self.btn_interaction_resolver: Future = None
+        self.btn_interaction_resolver: Future | None = None
         self.btn_release_event = Event()
         self.event_loop: asyncio.AbstractEventLoop = event_loop
 
@@ -51,8 +51,10 @@ class ButtonManager:
 
         if self.btn_release_event.is_set():
             # Button was released before 1 second = short press
-            if self.button.when_released:
-                # Check to avaoid warning on assigning None to previously None callback
+
+            if getattr(self.button, "when_released", None) is not None:
+                # use this to supress warnings regarding ``if self.button.when_released:``
+                # Check to avoid warning on assigning None to previously None callback
                 self.button.when_released = None
             self.cmd.skip_recording()
         else:
@@ -63,7 +65,7 @@ class ButtonManager:
 
     def button_interaction_wrapper(self):
 
-        if self.button.when_released:
+        if getattr(self.button, "when_released", None) is not None:
             self.button.when_released = None
 
         # handle await stuff in new coroutine
