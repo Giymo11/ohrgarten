@@ -1,12 +1,13 @@
 from recorder import Recorder
 from player import Player
 from btn_manager import ButtonManager
+from led_manager import LedManager
 #from callables import CmdTyping
 from datetime import datetime
 from pathlib import Path
 import asyncio
 import yaml
-from config import Config, ButtonConfig, RecordingConfig, PlayerConfig
+from config import Config, ButtonConfig, RecordingConfig, PlayerConfig, LedConfig
 import threading
 
 # Initialize
@@ -16,7 +17,8 @@ conf:dict = yaml.safe_load(open("config.yaml"))
 settings = Config(
     btn_cfg = ButtonConfig(**conf.get("button_config",{})),
     rec_cfg = RecordingConfig(**conf.get("recorder_config",{})),
-    ply_cfg = PlayerConfig(**conf.get("player_config", {}))
+    ply_cfg = PlayerConfig(**conf.get("player_config", {})),
+    led_cfg = LedConfig(**conf.get("led_config", {}))
 )
 
 
@@ -36,11 +38,15 @@ player = Player(ply_cfg = settings.ply_cfg)
 btn_manager = ButtonManager(button_cfg = settings.btn_cfg,
                             event_loop = event_loop)
 
+# Initialize Led
+led_manager = LedManager(led_cfg = settings.led_cfg, event_loop = event_loop)
+
 class CmdRegistry:
     def __init__(self,
                  recorder: Recorder,
                  player:   Player,
-                 buttons:  ButtonManager):
+                 buttons:  ButtonManager,
+                 led: LedManager = None):
         self.reset_recordings = recorder.reset_recordings
         self.start_recording = recorder.start_recording
 
@@ -55,11 +61,12 @@ class CmdRegistry:
         recorder.inject_cmd(self) # type: ignore
         player.inject_cmd(self) # type: ignore
         buttons.inject_cmd(self) # type: ignore
-        
+        if led:
+            led.inject_cmd(self)
 
 
 # Initialize Command container allowing cross instance access of selected methods without importing whole classes
-cmd = CmdRegistry(recorder, player, btn_manager)
+cmd = CmdRegistry(recorder, player, btn_manager, led_manager)
 
 # --- Main loop ---
 print(f"Press and hold button to record.")

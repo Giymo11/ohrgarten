@@ -20,7 +20,21 @@ use `pip freeze > requirements.txt` to record the dependencies
 
 use setup.sh to install dependencies: `chmod +x setup.sh && ./setup.sh`
 
-# notes
+## start the script
+1) activate venv
+2) run `sh start.sh`
 
+This will run the script with root privileges, which is required for the Neopixel library.
 
+## notes
+
+the volume is bound to individual sound cards. With `aplay -l` find the index of the soundcard whose volume needs to be adjusted.
+Use `alsamixer -c <soundcard index>` to change the speaker volume interactively.
+Use `amixer -c <soundcard index> sset Speaker 100%` to change the Speaker volume directly.
+
+example:
+`amixer -c 2 sset Speaker 50%` sets the soundcard at index 2s speaker to 50%
+
+These settings do not persist on reboot. Use `sudo alsactl store` to store the current state instead and `sudo alsactl restore` to restore the state.
+If alsa-restore.service is configured (by default), the state will be restored on reboot as well.
 

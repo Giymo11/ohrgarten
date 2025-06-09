@@ -1,0 +1,1 @@
+sudo env "PATH=$VIRTUAL_ENV/bin:$PATH" python3 src/main.py

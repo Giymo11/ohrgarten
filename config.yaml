@@ -22,3 +22,8 @@ player_config:
     - "aplay"
     - "-D"
     - "plughw:2,0" # Use default output device
+
+led_config:
+# if no led is implemented in the device, leave the values blank or change them to None
+  DATA_PIN: "D18" #only following pins (GPIO number) allowed: D10, D12, D18 or D21
+  PIXEL_NUM: 1

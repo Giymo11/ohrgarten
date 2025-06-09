@@ -18,9 +18,15 @@ class RecordingConfig:
 class PlayerConfig:
     APLAY_CMD:  Final[List[str]]
 
+@dataclass
+class LedConfig:
+    DATA_PIN: Final[str]
+    PIXEL_NUM: Final[int]
+
 # wrap everything under 1 config
 @dataclass
 class Config:
     btn_cfg: ButtonConfig
     rec_cfg: RecordingConfig
     ply_cfg: PlayerConfig
+    led_cfg: LedConfig
