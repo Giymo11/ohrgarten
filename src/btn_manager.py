@@ -57,7 +57,7 @@ class ButtonManager:
             # Wait until release
             while self.button.is_pressed:
                 await asyncio.sleep(polling_interval)
-
+            
             self.cmd.stop_recording()
 
     def button_interaction_wrapper(self):

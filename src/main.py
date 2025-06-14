@@ -56,6 +56,7 @@ class CmdRegistry:
         self.pause_player = player.pause_player
         self.resume_player = player.resume_player
         self.skip_player = player.skip_player
+        self.extend_buffer = player.extend_buffer
         self.recording_led_on = led.recording_led_on
         self.replay_led_on = led.replay_led_on
         self.instruction_led_on = led.instruction_led_on

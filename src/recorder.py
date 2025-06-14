@@ -85,6 +85,7 @@ class Recorder:
         
 
     def start_recording(self):
+        print("Started rec func")
         """Starts the arecord process."""
         self.cmd.pause_player()
         #self.cmd.play_sound(self.BEEP)
@@ -102,6 +103,7 @@ class Recorder:
                 print(f"Command: {' '.join(full_command)}")
 
                 # Start arecord as a background process using Popen
+                # Duration of recording limited to config defined arecord cmd duration
                 self.recording_process = subprocess.Popen(full_command, stderr=subprocess.PIPE)
                 Recorder.recording_start = time.time()
                 print(f"Recording started (PID: {self.recording_process.pid})... Press and hold button.")
@@ -161,7 +163,7 @@ class Recorder:
             if self.check_len(duration = rec_duration, threshold = 1.5):
                 print("Include recording")
                 self.cmd.play_sound(self.current_filename)
-                self.buffer.append(self.current_filename)
+                self.cmd.extend_buffer(self.current_filename)
             else:
                 print("Discard recording")
 

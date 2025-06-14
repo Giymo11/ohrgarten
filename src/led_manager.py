@@ -54,6 +54,7 @@ class LedManager:
         if not self.led:
             return
         self.led[0] = RED
+        print("LED RED")
 
     def replay_led_on(self):
         if not self.led:

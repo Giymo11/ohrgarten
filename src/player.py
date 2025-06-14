@@ -31,10 +31,16 @@ class Player:
         self.buffer = self.cmd.get_rec_buffer()
 
 
+    # extending recording buffer moved here to simplify threading lock mechanism without needing to expose the _lock to cmd
+    def extend_buffer(self, recording):
+        with self._lock:
+            insert_pos = (self._idx + 1) % (len(self.buffer) + 1)
+            self.buffer.insert(insert_pos, recording)
+
     # plays sound until finished 
     # useful for short sfx
     def play_sound(self, filename):
-        
+        timeout = 20
         # only for beep sound usecase
         # terminate all other playback processes in order to play beep.
         if self.playing_proc:
@@ -45,7 +51,7 @@ class Player:
         try:
             # Run aplay and wait for it to complete. Capture output to hide it unless error.
             cmd = self.APLAY_CMD + [filename]
-            subprocess.run(cmd, check=True, capture_output=True, timeout=5) # Check=True raises error on fail
+            subprocess.run(cmd, check=True, capture_output=True, timeout=timeout) # Check=True raises error on fail
             print("Play Finished.")
         except FileNotFoundError:
             print("Error: 'aplay' command not found. Is alsa-utils installed?")
@@ -53,7 +59,7 @@ class Player:
             print(f"Error playing beep using aplay: {e}")
             print(f"Stderr: {e.stderr.decode('utf-8', errors='ignore')}")
         except subprocess.TimeoutExpired:
-            print("Error: Timeout playing beep sound.")
+            print(f"Recording reached {timeout} sec timeout.")
         except Exception as e:
             print(f"An unexpected error occurred during beep playback: {e}")
 
@@ -67,9 +73,20 @@ class Player:
         )
         return proc
     
+    def _terminate_current_playback(self):
+        proc = self.playing_proc
+
+        if proc and proc.poll() is None:
+            try:
+                proc.terminate()
+                proc.wait(timeout=1)
+            except Exception:
+                pass
+
     def pause_player(self):
         # terminate currently playing process
-        self.skip_player()
+        #self.skip_player()
+        self._terminate_current_playback()
         # pauses playback loop
         self._pause_event.clear()
         print(f"pause player")
@@ -86,14 +103,19 @@ class Player:
 
     # terminate currently playing process, thus skipping to next loop
     def skip_player(self):
-        self._skip_event.set()
-        print(f"invoke button skip")
+        with self._lock:
+            self._skip_event.set()
+            self._idx = (self._idx + 1) % len(self.buffer)
+
+        self._terminate_current_playback()
+
+        print("invoke button skip")
         
 
     # gpt was here
     def play_forever(self):
         while not self._stop_event.is_set():
-            # waits until  resume_player has been called by setting _pause_event.set()
+            # waits until resume_player has been called by setting _pause_event.set()
             self._pause_event.wait()
             if not self.buffer:
                 time.sleep(0.1)
@@ -102,17 +124,31 @@ class Player:
             # TODO!: fix random playback after pressing skip
             # pick next index
             with self._lock:
-                current = self._idx
-                self._idx = (self._idx + 1) % len(self.buffer)
-            filename = self.buffer[current]
+                filename = self.buffer[self._idx]
 
             self.playing_proc = self._play_sound_non_blocking(filename)
 
-            # watch for skip or natural end
-            while self.playing_proc.poll() is None:
-                if self._skip_event.is_set() and self.playing_proc:
-                    self.playing_proc.terminate()
-                    self.playing_proc = None
-                    self._skip_event.clear()
+            # None == Process still running
+            while self.playing_proc and self.playing_proc.poll() is None:
+                # when skipped triggered, then don't need to wait for process to terminate, as it is already terminated by skip
+                if self._skip_event.is_set():
                     break
-                time.sleep(0.05)
+                time.sleep(0.1)
+
+            self.playing_proc = None
+
+            # advance index only if not already advanced by skip
+            with self._lock:
+                if self._skip_event.is_set():
+                    self._skip_event.clear()
+                    continue
+                self._idx = (self._idx + 1) % len(self.buffer)
+           
+           
+            # while self.playing_proc.poll() is None:
+            #     if self._skip_event.is_set() and self.playing_proc:
+            #         self.playing_proc.terminate()
+            #         self.playing_proc = None
+            #         self._skip_event.clear()
+            #         break
+            #     time.sleep(0.05)

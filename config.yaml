@@ -16,6 +16,8 @@ recorder_config:
     - "wav"  # Save as WAV file type
     - "-D"
     - "plughw:2,0" # find from 'arecord -l'
+    - "-d"
+    - "20" # limit to 20 seconds per recording
 
 player_config:
   APLAY_CMD:
