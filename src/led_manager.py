@@ -8,6 +8,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from cmd_typing import CmdTyping
 
+RED = (20, 0, 0)
+GREEN = (0, 20, 0)
+BLUE = (0, 0, 20)
+OFF = (0, 0, 0)
+
 class LedManager:
     def __init__(self, led_cfg: LedConfig, event_loop):
         
@@ -44,3 +49,13 @@ class LedManager:
 
     def inject_cmd(self, cmd:"CmdTyping"):
         self.cmd = cmd
+    
+    def recording_led_on(self):
+        if not self.led:
+            return
+        self.led[0] = RED
+    
+    def led_off(self):
+        if not self.led:
+            return
+        self.led[0] = OFF

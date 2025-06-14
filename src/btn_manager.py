@@ -50,7 +50,7 @@ class ButtonManager:
         # Or event to be set when the button is released before that threshold
         done, pending = await asyncio.wait(
             [
-                asyncio.create_task(asyncio.sleep(1)),
+                asyncio.create_task(asyncio.sleep(.2)),
                 asyncio.create_task(self.btn_release_event.wait())
             ],
             return_when=asyncio.FIRST_COMPLETED

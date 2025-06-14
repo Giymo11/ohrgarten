@@ -85,7 +85,7 @@ class Recorder:
         self.cmd.pause_player()
         self.cmd.play_sound(self.BEEP)
         if self.recording_process is None: 
-            
+            self.cmd.recording_led_on()
 
 
             try:
@@ -156,6 +156,8 @@ class Recorder:
 
 
             self.buffer.append(self.current_filename)
+
+            self.cmd.led_off()
             time.sleep(1)
 
 

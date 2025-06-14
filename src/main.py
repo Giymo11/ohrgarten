@@ -46,7 +46,7 @@ class CmdRegistry:
                  recorder: Recorder,
                  player:   Player,
                  buttons:  ButtonManager,
-                 led: LedManager = None):
+                 led: LedManager):
         self.reset_recordings = recorder.reset_recordings
         self.start_recording = recorder.start_recording
 
@@ -56,13 +56,14 @@ class CmdRegistry:
         self.pause_player = player.pause_player
         self.resume_player = player.resume_player
         self.skip_player = player.skip_player
+        self.recording_led_on = led.recording_led_on
+        self.led_off = led.led_off
         
 
         recorder.inject_cmd(self) # type: ignore
         player.inject_cmd(self) # type: ignore
         buttons.inject_cmd(self) # type: ignore
-        if led:
-            led.inject_cmd(self)
+        led.inject_cmd(self)
 
 
 # Initialize Command container allowing cross instance access of selected methods without importing whole classes
