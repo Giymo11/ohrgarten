@@ -57,13 +57,15 @@ class CmdRegistry:
         self.resume_player = player.resume_player
         self.skip_player = player.skip_player
         self.recording_led_on = led.recording_led_on
+        self.replay_led_on = led.replay_led_on
+        self.instruction_led_on = led.instruction_led_on
         self.led_off = led.led_off
         
 
         recorder.inject_cmd(self) # type: ignore
         player.inject_cmd(self) # type: ignore
         buttons.inject_cmd(self) # type: ignore
-        led.inject_cmd(self)
+        led.inject_cmd(self) #type: ignore
 
 
 # Initialize Command container allowing cross instance access of selected methods without importing whole classes
@@ -97,10 +99,14 @@ if __name__ == "__main__":
     finally:
         # Stop and terminate player loop
         player.stop_player()
+        led_manager.shutdown_neopixel()
         # Ensure recording stops if the script exits while recording
         if (proc := recorder.get_rec_process()) is not None and proc.poll() is None:
             print("Cleaning up active recording process...")
             recorder.stop_recording()
+
+        import gc
+        gc.collect()
         print("Script finished.")
 
 

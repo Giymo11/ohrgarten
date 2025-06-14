@@ -8,7 +8,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from cmd_typing import CmdTyping
 
+
+
 class Recorder:
+
+    recording_start = 0
     
     def __init__(self, rec_cfg: RecordingConfig):
         # Initialize folders
@@ -83,7 +87,7 @@ class Recorder:
     def start_recording(self):
         """Starts the arecord process."""
         self.cmd.pause_player()
-        self.cmd.play_sound(self.BEEP)
+        #self.cmd.play_sound(self.BEEP)
         if self.recording_process is None: 
             self.cmd.recording_led_on()
 
@@ -99,6 +103,7 @@ class Recorder:
 
                 # Start arecord as a background process using Popen
                 self.recording_process = subprocess.Popen(full_command, stderr=subprocess.PIPE)
+                Recorder.recording_start = time.time()
                 print(f"Recording started (PID: {self.recording_process.pid})... Press and hold button.")
 
             except FileNotFoundError:
@@ -118,6 +123,7 @@ class Recorder:
             print(f"Stopping recording (PID: {self.recording_process.pid})...")
             try:
                 # Send SIGTERM signal first (allows arecord to potentially clean up)
+                rec_duration = time.time() - Recorder.recording_start
                 self.recording_process.terminate()
                 time.sleep(0.2)
                 
@@ -151,11 +157,13 @@ class Recorder:
             
             #self.supress_background_noise(self.current_filename)
 
-            self.cmd.play_sound(self.BEEP)
-            self.cmd.play_sound(self.current_filename)
-
-
-            self.buffer.append(self.current_filename)
+            #self.cmd.play_sound(self.BEEP)
+            if self.check_len(duration = rec_duration, threshold = 1.5):
+                print("Include recording")
+                self.cmd.play_sound(self.current_filename)
+                self.buffer.append(self.current_filename)
+            else:
+                print("Discard recording")
 
             self.cmd.led_off()
             time.sleep(1)
@@ -165,6 +173,17 @@ class Recorder:
             print("Not currently recording.")
 
         self.cmd.resume_player()
+
+    def check_len(self, duration, threshold = 3.0) -> bool:
+
+
+        print(duration)
+        if duration < threshold:
+            
+            # do not include recording, most likely mistake
+            return False
+        # include recording
+        return True
 
 
     #def supress_background_noise(self, filename):

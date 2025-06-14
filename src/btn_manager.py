@@ -20,11 +20,9 @@ class ButtonManager:
         
 
         self.button.when_pressed = self.button_interaction_wrapper
-        #button.when_released = stop_recording
 
 
         self.btn_interaction_resolver: Future | None = None
-        self.btn_release_event = Event()
         self.event_loop: asyncio.AbstractEventLoop = event_loop
 
 
@@ -35,48 +33,35 @@ class ButtonManager:
     def _initialize_button(self, pin: int) -> Button:
         return Button(pin, pull_up=True, bounce_time=0.1)
     
-        
-        
-    def _default_button_release_callback(self):
-        self.event_loop.call_soon_threadsafe(self.btn_release_event.set)
 
     async def _handle_button_press(self):
 
-        # Reset the event each time the button is pressed
-        self.btn_release_event.clear()
-        self.button.when_released = self._default_button_release_callback
+        # Duration to distinguish short/long press
+        threshold = 0.15
+        polling_interval = 0.01
+        elapsed = 0
 
-        # Wait for either 1 second = threshold for long hold (recording)
-        # Or event to be set when the button is released before that threshold
-        done, pending = await asyncio.wait(
-            [
-                asyncio.create_task(asyncio.sleep(.2)),
-                asyncio.create_task(self.btn_release_event.wait())
-            ],
-            return_when=asyncio.FIRST_COMPLETED
-        )
+        # Breaks when holding threshold reached
+        # Breaks when button is released
+        while self.button.is_pressed and elapsed < threshold:
+            await asyncio.sleep(polling_interval)
+            elapsed += polling_interval
 
-        for task in pending:
-            task.cancel()
-
-        if self.btn_release_event.is_set():
-            # Button was released before 1 second = short press
-
-            if getattr(self.button, "when_released", None) is not None:
-                # use this to supress warnings regarding ``if self.button.when_released:``
-                # Check to avoid warning on assigning None to previously None callback
-                self.button.when_released = None
+        # Button is released after the while loop
+        if not self.button.is_pressed:
             self.cmd.skip_player()
+        # Button is still held after the hold threshold reached
         else:
-            # Button is still held after 1 second = long press
-            self.button.when_released = self.cmd.stop_recording 
             self.cmd.start_recording()
 
+            # Wait until release
+            while self.button.is_pressed:
+                await asyncio.sleep(polling_interval)
+
+            self.cmd.stop_recording()
 
     def button_interaction_wrapper(self):
 
-        if getattr(self.button, "when_released", None) is not None:
-            self.button.when_released = None
 
         # handle await stuff in new coroutine
         if self.btn_interaction_resolver is None or self.btn_interaction_resolver.done():

@@ -54,8 +54,24 @@ class LedManager:
         if not self.led:
             return
         self.led[0] = RED
+
+    def replay_led_on(self):
+        if not self.led:
+            return
+        self.led[0] = GREEN
+    
+    def instruction_led_on(self):
+        if not self.led:
+            return
+        self.led[0] = BLUE
     
     def led_off(self):
         if not self.led:
             return
         self.led[0] = OFF
+
+    def shutdown_neopixel(self):
+        self.led.fill((0, 0, 0))
+        self.led.show()
+        print(f"Freeing up LED gpio pin {self.led_pin}")
+        del self.led
