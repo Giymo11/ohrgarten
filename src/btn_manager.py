@@ -33,7 +33,7 @@ class ButtonManager:
         self.reset_button.when_pressed = cmd.reset_recordings
 
     def _initialize_button(self, pin: int) -> Button:
-        return Button(pin, pull_up=True, bounce_time=0.05)
+        return Button(pin, pull_up=True, bounce_time=0.03)
     
     def button_await_confirm(self, state:bool) -> None:
         self.await_confirm = state
@@ -65,7 +65,7 @@ class ButtonManager:
             self.cmd.stop_recording()
 
 
-    async def _confirm_press(self):
+    async def _confirm_press_advanced(self):
         self.button.when_pressed = None
         hold_threshold = 3.0  # seconds
         double_press_window = 0.5
@@ -107,12 +107,16 @@ class ButtonManager:
                 press_duration = time.time() - press_start
                 if press_duration < 0.15:
                     print("Double press — delete track")
+                    self.cmd.pause_player()
                     self.cmd.stop_confirmation_loop()
                     self.cmd.delete_recording()
                     self.cmd.resume_player()
                     self.await_confirm = False
                     break
+                else:
+                    print("Double press not acknoledged")
             await asyncio.sleep(0.01)
+
 
         self.button.when_pressed = self.button_interaction_wrapper
 
@@ -122,7 +126,7 @@ class ButtonManager:
         if self.btn_interaction_resolver is None or self.btn_interaction_resolver.done():
         # handle await stuff in new coroutine
             if self.await_confirm:
-                self.btn_interaction_resolver = asyncio.run_coroutine_threadsafe(self._confirm_press(), self.event_loop)
+                self.btn_interaction_resolver = asyncio.run_coroutine_threadsafe(self._confirm_press_advanced(), self.event_loop)
 
 
             else:

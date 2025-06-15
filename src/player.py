@@ -136,7 +136,7 @@ class Player:
 # loop filename and instruction 
     def _loop_recording_and_instruction(self, filename):
         print("Loop confirmation phase")
-        loop_buffer = [filename, 'sfx/beep.wav']
+        loop_buffer = [filename, 'sfx/save.wav']
         index = 0
         self.resume_player()
         while not self._stop_confirmation.is_set():
