@@ -66,6 +66,7 @@ class Player:
     # plays soun
     def _play_sound_non_blocking(self, filename) -> subprocess.Popen:
             # start playback
+        print(f"Playing recording at index {self._idx}")
         proc = subprocess.Popen(
             self.APLAY_CMD + [filename],
             stdout=subprocess.DEVNULL,
@@ -145,10 +146,3 @@ class Player:
                 self._idx = (self._idx + 1) % len(self.buffer)
            
            
-            # while self.playing_proc.poll() is None:
-            #     if self._skip_event.is_set() and self.playing_proc:
-            #         self.playing_proc.terminate()
-            #         self.playing_proc = None
-            #         self._skip_event.clear()
-            #         break
-            #     time.sleep(0.05)

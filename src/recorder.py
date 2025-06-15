@@ -3,6 +3,9 @@ from pathlib import Path
 import os
 from datetime import datetime
 import time, signal, subprocess, os
+import numpy as np
+from scipy.io import wavfile
+from scipy.signal import butter, lfilter
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -159,16 +162,15 @@ class Recorder:
             
             #self.supress_background_noise(self.current_filename)
 
-            #self.cmd.play_sound(self.BEEP)
+
+            print("Include recording")
             if self.check_len(duration = rec_duration, threshold = 1.5):
-                print("Include recording")
+                self.apply_filter(self.current_filename)
                 self.cmd.play_sound(self.current_filename)
                 self.cmd.extend_buffer(self.current_filename)
-            else:
-                print("Discard recording")
 
             self.cmd.led_off()
-            time.sleep(1)
+            #time.sleep(1)
 
 
         else:
@@ -187,6 +189,22 @@ class Recorder:
         # include recording
         return True
 
+    def apply_filter(self, filename):
+        rate, data = wavfile.read(filename)
+        if data.ndim == 1:
+            filtered = self.lowpass(data, cutoff_freq=3000, sample_rate=rate)
+        else:
+            filtered = np.array([self.lowpass(channel, 3000, rate) for channel in data.T]).T
+
+        filtered = np.clip(filtered, -32768, 32767).astype(np.int16)
+        wavfile.write(filename, rate, filtered)
+
+
+    def lowpass(self, data, cutoff_freq, sample_rate, order=5):
+        nyquist = 0.5 * sample_rate
+        norm_cutoff = cutoff_freq / nyquist
+        b, a = butter(order, norm_cutoff, btype='low', analog=False)
+        return lfilter(b, a, data)
 
     #def supress_background_noise(self, filename):
 

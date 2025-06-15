@@ -7,7 +7,6 @@
 3. use `sudo raspi-config` to enable ssh (interface options) and wifi (system options)
 4. use `remote - ssh` extension in vscode to develop on the raspi using ssh
 
-
 ## setup python env
 
 1. create a virtual environment using `python3 -m venv venv`
@@ -17,7 +16,8 @@
 use `pip freeze > requirements.txt` to record the dependencies
 
 ## install deps
-
+Make sure the raspberry pi is correctly configured to use use piwheels.
+`pip config set global.index-url https://www.piwheels.org/simple`
 use setup.sh to install dependencies: `chmod +x setup.sh && ./setup.sh`
 
 ## start the script
