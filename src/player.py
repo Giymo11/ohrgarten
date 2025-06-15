@@ -23,6 +23,7 @@ class Player:
         self._skip_event = threading.Event()
         self._lock = threading.Lock()
         self.playing_proc: subprocess.Popen | None = None
+        self.confirmation_phase = False
 
 
     def inject_cmd(self, cmd:"CmdTyping"):
@@ -32,7 +33,9 @@ class Player:
 
 
     # extending recording buffer moved here to simplify threading lock mechanism without needing to expose the _lock to cmd
-    def extend_buffer(self, recording):
+    def extend_buffer(self, recording=None):
+        if not recording:
+            recording = self.cmd.get_current_recording()
         with self._lock:
             insert_pos = (self._idx + 1) % (len(self.buffer) + 1)
             self.buffer.insert(insert_pos, recording)
@@ -94,11 +97,14 @@ class Player:
 
     # unpauses playback loop
     def resume_player(self):
+        #! experimental
+        #! self._terminate_current_playback()
         self._pause_event.set()
         print(f"resume player")
 
     # completely kills the loop and thus the thread
     def stop_player(self):
+        self._terminate_current_playback()
         self._stop_event.set()
         print(f"terminating playback")
 
@@ -111,13 +117,47 @@ class Player:
         self._terminate_current_playback()
 
         print("invoke button skip")
-        
 
-    # gpt was here
+    def playback_hold_confirm(self):
+        self.pause_player()
+
+        self._play_sound_non_blocking('sfx/rising_meter.wav')
+
+# loop filename and instruction 
+    def _loop_recording_and_instruction(self, filename):
+        print("Loop confirmation phase")
+        loop_buffer = [filename, 'sfx/beep.wav']
+        index = 0
+        self.resume_player()
+        while not self._stop_event.is_set():
+            self._pause_event.wait()
+            file = loop_buffer[index]
+            self.playing_proc = self._play_sound_non_blocking(file)
+            while self.playing_proc and self.playing_proc.poll() is None:
+                time.sleep(0.1)
+
+            self.playing_proc = None
+
+            index = (index + 1) % 2
+
+        self._stop_event.clear()
+        self.confirmation_phase = False
+        self.cmd.button_await_confirm(False)
+
+    def start_confirmation(self, filename):
+        self._terminate_current_playback()
+        self.confirmation_phase = True
+        threading.Thread(target=self._loop_recording_and_instruction, args = (filename,), daemon= True).start()
+        #self._loop_recording_and_instruction(filename)
+
+    
     def play_forever(self):
         while not self._stop_event.is_set():
             # waits until resume_player has been called by setting _pause_event.set()
             self._pause_event.wait()
+            if self.confirmation_phase:
+                time.sleep(0.5)
+                continue
             if not self.buffer:
                 time.sleep(0.1)
                 continue

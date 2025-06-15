@@ -24,6 +24,7 @@ class ButtonManager:
 
         self.btn_interaction_resolver: Future | None = None
         self.event_loop: asyncio.AbstractEventLoop = event_loop
+        self.await_confirm = False
 
 
     def inject_cmd(self, cmd:"CmdTyping"):
@@ -33,6 +34,8 @@ class ButtonManager:
     def _initialize_button(self, pin: int) -> Button:
         return Button(pin, pull_up=True, bounce_time=0.1)
     
+    def button_await_confirm(self, state:bool) -> None:
+        self.await_confirm = state
 
     async def _handle_button_press(self):
 
@@ -60,11 +63,56 @@ class ButtonManager:
             
             self.cmd.stop_recording()
 
+
+    async def _confirm_press(self):
+        self.button.when_pressed = None
+        hold_threshold = 3.0  # seconds
+        polling_interval = 0.01
+        elapsed = 0.0
+
+        self.cmd.playback_hold_confirm()
+        while self.button.is_pressed and elapsed < hold_threshold:
+            await asyncio.sleep(polling_interval)
+            elapsed += polling_interval
+
+
+        if elapsed >= hold_threshold:
+            self.cmd.stop_player()
+            self.cmd.resume_player()
+            print("Confirmed Track")
+            self.button.when_pressed = self.button_interaction_wrapper
+            # confirmed recording. extend with current recording
+            self.cmd.extend_buffer()
+            self.await_confirm = False
+            return
+        else:
+            self.cmd.resume_player()
+            elapsed = 0.0
+            while not self.button.is_pressed and elapsed < 0.5:
+                await asyncio.sleep(polling_interval)
+                elapsed += polling_interval
+            
+            if self.button.is_pressed:
+                elapsed = 0.0
+                while self.button.is_pressed and elapsed < 0.15:
+                    await asyncio.sleep(polling_interval)
+                    elapsed += polling_interval
+                
+                if not self.button.is_pressed:
+                    print("Delete Track")
+            self.button.when_pressed = self.button_interaction_wrapper  
+
+
     def button_interaction_wrapper(self):
 
-
-        # handle await stuff in new coroutine
         if self.btn_interaction_resolver is None or self.btn_interaction_resolver.done():
-            self.btn_interaction_resolver = asyncio.run_coroutine_threadsafe(self._handle_button_press(), self.event_loop)
+        # handle await stuff in new coroutine
+            if self.await_confirm:
+                self.btn_interaction_resolver = asyncio.run_coroutine_threadsafe(self._confirm_press(), self.event_loop)
 
-    
+
+            else:
+                self.btn_interaction_resolver = asyncio.run_coroutine_threadsafe(self._handle_button_press(), self.event_loop)
+
+
+            

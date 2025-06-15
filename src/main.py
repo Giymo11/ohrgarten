@@ -47,6 +47,9 @@ class CmdRegistry:
                  player:   Player,
                  buttons:  ButtonManager,
                  led: LedManager):
+        self.button_await_confirm = buttons.button_await_confirm
+        
+        self.get_current_recording = recorder.get_current_recording
         self.reset_recordings = recorder.reset_recordings
         self.start_recording = recorder.start_recording
 
@@ -57,6 +60,9 @@ class CmdRegistry:
         self.resume_player = player.resume_player
         self.skip_player = player.skip_player
         self.extend_buffer = player.extend_buffer
+        self.playback_hold_confirm = player.playback_hold_confirm
+        self.start_confirmation = player.start_confirmation
+
         self.recording_led_on = led.recording_led_on
         self.replay_led_on = led.replay_led_on
         self.instruction_led_on = led.instruction_led_on

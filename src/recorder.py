@@ -42,6 +42,9 @@ class Recorder:
     def get_rec_process(self) -> subprocess.Popen | None:
         return self.recording_process
     
+    def get_current_recording(self) -> str:
+        return self.current_filename
+
     def _load_recordings(self) -> list:
         """Scans the RECORDING_PATH for .wav files and populates the recorded_files list."""
         recorded_files = [] 
@@ -124,6 +127,7 @@ class Recorder:
     def stop_recording(self):
         """Stops the arecord process."""
 
+        self.cmd.button_await_confirm(True)
         if self.recording_process is not None:
             print(f"Stopping recording (PID: {self.recording_process.pid})...")
             try:
@@ -162,21 +166,25 @@ class Recorder:
             
             #self.supress_background_noise(self.current_filename)
 
+            #! TODO DISABLE BUTTONS
 
-            print("Include recording")
             if self.check_len(duration = rec_duration, threshold = 1.5):
+                print("Include recording")
                 self.apply_filter(self.current_filename)
-                self.cmd.play_sound(self.current_filename)
-                self.cmd.extend_buffer(self.current_filename)
 
-            self.cmd.led_off()
-            #time.sleep(1)
+                #! Replace with confirmation of recording
+                print("Start confrimation phase")
+                self.cmd.led_off()
+                self.cmd.start_confirmation(self.current_filename)
 
 
         else:
             print("Not currently recording.")
 
         self.cmd.resume_player()
+        #self.cmd.start()
+
+    
 
     def check_len(self, duration, threshold = 3.0) -> bool:
 
