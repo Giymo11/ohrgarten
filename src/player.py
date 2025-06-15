@@ -156,7 +156,10 @@ class Player:
 
 
             index = (index + 1) % 2
-            time.sleep(1)
+            for _ in range(10):
+                if self._stop_confirmation.is_set():
+                    break
+                time.sleep(0.1)
 
         self._stop_confirmation.clear()
         self.confirmation_phase = False
