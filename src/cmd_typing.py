@@ -1,9 +1,11 @@
 from typing import Protocol
 import threading
+from led_manager import LedManager
 # Just for typehint & pylance (highlighting)
 # mathing all function calls & params of CmdRegistry defined in Main
 class CmdTyping(Protocol):
 
+    led: LedManager
 
     def button_await_confirm(self) -> None: ...
 

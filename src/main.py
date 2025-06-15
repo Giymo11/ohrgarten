@@ -72,6 +72,10 @@ class CmdRegistry:
         self.instruction_led_on = led.instruction_led_on
         self.led_off = led.led_off
         
+        self.recorder = recorder
+        self.button = buttons
+        self.player = player
+        self.led = led
 
         recorder.inject_cmd(self) # type: ignore
         player.inject_cmd(self) # type: ignore

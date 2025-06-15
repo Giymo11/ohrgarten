@@ -73,9 +73,11 @@ class ButtonManager:
         elapsed = 0.0
 
         proc = self.cmd.playback_hold_confirm()
+        led_task = self.cmd.led.start_confirm_led_seq(hold_threshold)
         while self.button.is_pressed and elapsed < hold_threshold:
             await asyncio.sleep(polling_interval)
             elapsed += polling_interval
+        
 
 
         if elapsed >= hold_threshold:
@@ -91,9 +93,13 @@ class ButtonManager:
             # confirmed recording. extend with current recording
             print("Confirmed Track")
             self.cmd.extend_buffer()
-            # disable conrigm_press path in interaction_wrapper
+            # disable confirm_press path in interaction_wrapper
             self.await_confirm = False
+            self.cmd.led.start_delayed_led_off(1)
             return
+        
+
+        self.cmd.led.stop_led_task(led_task)
         # Released early — check for second press (double-press)
         self.cmd.terminate_current_playback(proc)
         self.cmd.resume_player()
@@ -107,6 +113,7 @@ class ButtonManager:
                 press_duration = time.time() - press_start
                 if press_duration < 0.15:
                     print("Double press — delete track")
+                    self.cmd.led.start_deleted_led_seq(1.5)
                     self.cmd.pause_player()
                     self.cmd.stop_confirmation_loop()
                     self.cmd.delete_recording()

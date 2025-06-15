@@ -182,6 +182,9 @@ class Player:
 
     
     def play_forever(self):
+        
+
+
         while not self._stop_event.is_set():
             # waits until resume_player has been called by setting _pause_event.set()
             self._pause_event.wait()
@@ -207,17 +210,7 @@ class Player:
                     break
                 time.sleep(0.1)
 
-            # # None == Process still running
-            # while self.playing_proc and self.playing_proc.poll() is None:
-            #     # when skipped triggered, then don't need to wait for process to terminate, as it is already terminated by skip
-            #     if self._skip_event.is_set() or not self._pause_event.is_set():
-            #         # combat race cond if skip or pause what triggered before self.playing_proc was assigned to new process
-            #         self._terminate_current_playback()
-            #         break
-            #     time.sleep(0.1)
 
-
-            # advance index only if not already advanced by skip
             with self._lock:
                 if self._skip_event.is_set():
                     self._skip_event.clear()
