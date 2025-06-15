@@ -1,6 +1,5 @@
 from config import ButtonConfig
 from gpiozero import Button
-from cmd_typing import CmdTyping
 import asyncio
 from asyncio import Event
 from concurrent.futures import Future
@@ -30,7 +29,7 @@ class ButtonManager:
 
     def inject_cmd(self, cmd:"CmdTyping"):
         self.cmd = cmd
-        self.reset_button.when_pressed = cmd.reset_recordings
+        self.reset_button.when_pressed = cmd.recorder.reset_recordings
 
     def _initialize_button(self, pin: int) -> Button:
         return Button(pin, pull_up=True, bounce_time=0.05)
@@ -53,26 +52,26 @@ class ButtonManager:
 
         # Button is released after the while loop
         if not self.button.is_pressed:
-            self.cmd.skip_player()
+            self.cmd.player.skip()
         # Button is still held after the hold threshold reached
         else:
-            self.cmd.start_recording()
+            self.cmd.recorder.start_recording()
 
             # Wait until release
             while self.button.is_pressed:
                 await asyncio.sleep(polling_interval)
             
-            self.cmd.stop_recording()
+            self.cmd.recorder.stop_recording()
 
 
     async def _confirm_press_advanced(self):
         self.button.when_pressed = None
         hold_threshold = 3.0  # seconds
-        double_press_window = 0.7
+        double_press_window = 0.5
         polling_interval = 0.01
         elapsed = 0.0
 
-        proc = self.cmd.playback_hold_confirm()
+        proc = self.cmd.player.playback_hold_confirm()
         led_task = self.cmd.led.start_confirm_led_seq(hold_threshold)
         while self.button.is_pressed and elapsed < hold_threshold:
             await asyncio.sleep(polling_interval)
@@ -82,17 +81,17 @@ class ButtonManager:
 
         if elapsed >= hold_threshold:
             # to terminate the confirmation loop, but should not affect original loop
-            self.cmd.stop_confirmation_loop()
+            self.cmd.player.stop_confirmation_loop()
 
             # because player stopped in cmd.playback_hold_confirm() and player pause is affecting original play forever loop
-            self.cmd.resume_player()
-            self.cmd.terminate_current_playback(proc)
+            self.cmd.player.resume()
+            self.cmd.player.terminate_current_playback(proc)
             
             # Reset button.when_pressed
             self.button.when_pressed = self.button_interaction_wrapper
             # confirmed recording. extend with current recording
             print("Confirmed Track")
-            self.cmd.extend_buffer()
+            self.cmd.player.extend_buffer()
             # disable confirm_press path in interaction_wrapper
             self.await_confirm = False
             self.cmd.led.start_delayed_led_off(1)
@@ -101,17 +100,17 @@ class ButtonManager:
 
         self.cmd.led.stop_led_task(led_task)
         # Released early — check for second press (double-press)
-        self.cmd.terminate_current_playback(proc)
-        self.cmd.resume_player()
+        self.cmd.player.terminate_current_playback(proc)
+        self.cmd.player.resume()
 
 
         if await self._wait_for_second_press(double_press_window):
             print("Double press — delete track")
             self.cmd.led.start_deleted_led_seq(1.5)
-            self.cmd.pause_player()
-            self.cmd.stop_confirmation_loop()
-            self.cmd.delete_recording()
-            self.cmd.resume_player()
+            self.cmd.player.pause()
+            self.cmd.player.stop_confirmation_loop()
+            self.cmd.recorder.delete_recording()
+            self.cmd.player.resume()
             self.await_confirm = False
         else:
             print("Double press not acknowledged")

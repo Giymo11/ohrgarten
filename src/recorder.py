@@ -104,10 +104,10 @@ class Recorder:
     def start_recording(self):
         print("Started rec func")
         """Starts the arecord process."""
-        self.cmd.pause_player()
+        self.cmd.player.pause()
         #self.cmd.play_sound(self.BEEP)
         if self.recording_process is None: 
-            self.cmd.recording_led_on()
+            self.cmd.led.recording_led_on()
 
 
             try:
@@ -176,35 +176,32 @@ class Recorder:
             
             #self.supress_background_noise(self.current_filename)
 
-            #! TODO DISABLE BUTTONS
-
             if self.check_len(duration = rec_duration, threshold = 1.5):
                 print("Include recording")
                 self.apply_filter(self.current_filename)
 
-                #! Replace with confirmation of recording
                 print("Start confrimation phase")
-                self.cmd.led_off()
+                self.cmd.led.led_off()
                 
-                self.confirm()
+                self.confirm_routine()
                 #self.cmd.start_confirmation(self.current_filename)
 
 
         else:
             print("Not currently recording.")
 
-        self.cmd.resume_player()
+        self.cmd.player.resume()
         #self.cmd.start()
 
-    def confirm(self):
-        self.cmd.button_await_confirm(True)
+    def confirm_routine(self):
+        self.cmd.button.button_await_confirm(True)
 
-        thread = self.cmd.start_confirmation(self.current_filename)
+        thread = self.cmd.player.start_confirmation(self.current_filename)
 
         def _watch():
             thread.join()
-            self.cmd.button_await_confirm(False)
-            self.cmd.resume_player()
+            self.cmd.button.button_await_confirm(False)
+            self.cmd.player.resume()
 
         threading.Thread(target=_watch, daemon=True).start()
     
@@ -236,50 +233,5 @@ class Recorder:
         norm_cutoff = cutoff_freq / nyquist
         b, a = butter(order, norm_cutoff, btype='low', analog=False)
         return lfilter(b, a, data)
-
-    #def supress_background_noise(self, filename):
-
-        # wf = wave.open(filename, "rb")
-        # assert wf.getframerate() in (8000, 16000, 32000, 48000)
-        # assert wf.getnchannels() == 1 and wf.getsampwidth() == 2
-
-        # vad = webrtcvad.Vad(2)
-        # sr = wf.getframerate()
-        # frame_ms      = 20
-        # frame_samples = int(sr * frame_ms / 1000)
-        # frame_bytes   = frame_samples * wf.getsampwidth()
-
-        # out = wave.open(filename + '1.wav', "wb")
-        # out.setparams(wf.getparams())
-
-        # while True:
-        #     data = wf.readframes(frame_samples)
-        #     if len(data) < frame_bytes:
-        #         break
-        #     if vad.is_speech(data, sr):
-        #         out.writeframes(data)
-
-        # wf.close()
-        # out.close()
-
-
-    # def play_sound(self, filename):
-
-    #     print(f"Playing {filename}...")
-    #     try:
-    #         # Run aplay and wait for it to complete. Capture output to hide it unless error.
-    #         cmd = self.rec_cfg.APLAY_CMD + [filename]
-    #         subprocess.run(cmd, check=True, capture_output=True, timeout=5) # Check=True raises error on fail
-    #         print("Play Finished.")
-    #     except FileNotFoundError:
-    #         print("Error: 'aplay' command not found. Is alsa-utils installed?")
-    #     except subprocess.CalledProcessError as e:
-    #         print(f"Error playing beep using aplay: {e}")
-    #         print(f"Stderr: {e.stderr.decode('utf-8', errors='ignore')}")
-    #     except subprocess.TimeoutExpired:
-    #         print("Error: Timeout playing beep sound.")
-    #     except Exception as e:
-    #         print(f"An unexpected error occurred during beep playback: {e}")
-
 
 

@@ -30,13 +30,13 @@ class Player:
     def inject_cmd(self, cmd:"CmdTyping"):
         self.cmd = cmd
         # start any cmd that are now possible as initialization step
-        self.buffer = self.cmd.get_rec_buffer()
+        self.buffer = self.cmd.recorder.get_rec_buffer()
 
 
     # extending recording buffer moved here to simplify threading lock mechanism without needing to expose the _lock to cmd
     def extend_buffer(self, recording=None):
         if not recording:
-            recording = self.cmd.get_current_recording()
+            recording = self.cmd.recorder.get_current_recording()
         with self._lock:
             insert_pos = (self._idx + 1) % (len(self.buffer) + 1)
             self.buffer.insert(insert_pos, recording)
@@ -87,7 +87,7 @@ class Player:
             except Exception as err:
                 print(f"Error during terminating playback: {str(err)}")
 
-    def pause_player(self):
+    def pause(self):
         # terminate currently playing process
         #self.skip_player()
         #self._terminate_current_playback()
@@ -96,25 +96,25 @@ class Player:
         print(f"pause player")
 
     # unpauses playback loop
-    def resume_player(self):
+    def resume(self):
         #! experimental
         #self.terminate_current_playback()
         self._pause_event.set()
         print(f"resume player")
 
     # completely kills the loop and thus the thread
-    def stop_player(self):
-        self.pause_player()
+    def stop(self):
+        self.pause()
         self._stop_event.set()
         print(f"terminating playback")
 
     def stop_confirmation_loop(self):
-        self.pause_player()
+        self.pause()
         self._stop_confirmation.set()
         print(f"terminating confirmation")
 
     # terminate currently playing process, thus skipping to next loop
-    def skip_player(self):
+    def skip(self):
         if self.confirmation_phase:
             return
         with self._lock:
@@ -126,19 +126,19 @@ class Player:
         print("invoke button skip")
 
     def playback_hold_confirm(self):
-        self.pause_player()
+        self.pause()
         time.sleep(0.2)
         print("Playing sfx/rising_meter")
         proc = self._play_sound_non_blocking('sfx/rising_meter.wav')
 
         return proc
 
-# loop filename and instruction 
+    # loop confirmation after recording
     def _loop_recording_and_instruction(self, filename):
         print("Loop confirmation phase")
         loop_buffer = [filename, 'sfx/save.wav']
         index = 0
-        self.resume_player()
+        self.resume()
         while not self._stop_confirmation.is_set():
             self._pause_event.wait()
             file = loop_buffer[index]
@@ -155,19 +155,12 @@ class Player:
                 time.sleep(.1)
 
 
-            # while self.playing_proc and self.playing_proc.poll() is None:
-            #     # combat race condition when pause has been invoced before self.playing_proc is assigned the new playing process
-            #     if not self._pause_event.is_set():
-            #         self._terminate_current_playback()
-            #         break
-            #     time.sleep(0.1)
-
             index = (index + 1) % 2
             time.sleep(1)
 
         self._stop_confirmation.clear()
         self.confirmation_phase = False
-        self.cmd.button_await_confirm(False)
+        self.cmd.button.button_await_confirm(False)
 
     def start_confirmation(self, filename):
 
@@ -183,8 +176,6 @@ class Player:
     
     def play_forever(self):
         
-
-
         while not self._stop_event.is_set():
             # waits until resume_player has been called by setting _pause_event.set()
             self._pause_event.wait()

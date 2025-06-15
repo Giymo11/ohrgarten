@@ -47,30 +47,30 @@ class CmdRegistry:
                  player:   Player,
                  buttons:  ButtonManager,
                  led: LedManager):
-        self.button_await_confirm = buttons.button_await_confirm
+        # self.button_await_confirm = buttons.button_await_confirm
         
-        self.get_current_recording = recorder.get_current_recording
-        self.reset_recordings = recorder.reset_recordings
-        self.start_recording = recorder.start_recording
+        # self.get_current_recording = recorder.get_current_recording
+        # self.reset_recordings = recorder.reset_recordings
+        # self.start_recording = recorder.start_recording
 
-        self.stop_recording = recorder.stop_recording
-        self.play_sound = player.play_sound
-        self.get_rec_buffer = recorder.get_rec_buffer
-        self.pause_player = player.pause_player
-        self.terminate_current_playback = player.terminate_current_playback
-        self.resume_player = player.resume_player
-        self.stop_player = player.stop_player
-        self.stop_confirmation_loop = player.stop_confirmation_loop
-        self.skip_player = player.skip_player
-        self.extend_buffer = player.extend_buffer
-        self.playback_hold_confirm = player.playback_hold_confirm
-        self.start_confirmation = player.start_confirmation
-        self.delete_recording = recorder.delete_recording
+        # self.stop_recording = recorder.stop_recording
+        # self.play_sound = player.play_sound
+        # self.get_rec_buffer = recorder.get_rec_buffer
+        # self.pause_player = player.pause_player
+        # self.terminate_current_playback = player.terminate_current_playback
+        # self.resume_player = player.resume_player
+        # self.stop_player = player.stop_player
+        # self.stop_confirmation_loop = player.stop_confirmation_loop
+        # self.skip_player = player.skip_player
+        # self.extend_buffer = player.extend_buffer
+        # self.playback_hold_confirm = player.playback_hold_confirm
+        # self.start_confirmation = player.start_confirmation
+        # self.delete_recording = recorder.delete_recording
 
-        self.recording_led_on = led.recording_led_on
-        self.replay_led_on = led.replay_led_on
-        self.instruction_led_on = led.instruction_led_on
-        self.led_off = led.led_off
+        # self.recording_led_on = led.recording_led_on
+        # self.replay_led_on = led.replay_led_on
+        # self.instruction_led_on = led.instruction_led_on
+        # self.led_off = led.led_off
         
         self.recorder = recorder
         self.button = buttons
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         print("\nCtrl+C detected. Exiting...")
     finally:
         # Stop and terminate player loop
-        player.stop_player()
+        player.stop()
         led_manager.shutdown_neopixel()
         # Ensure recording stops if the script exits while recording
         if (proc := recorder.get_rec_process()) is not None and proc.poll() is None:
