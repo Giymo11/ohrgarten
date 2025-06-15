@@ -33,7 +33,7 @@ class ButtonManager:
         self.reset_button.when_pressed = cmd.reset_recordings
 
     def _initialize_button(self, pin: int) -> Button:
-        return Button(pin, pull_up=True, bounce_time=0.03)
+        return Button(pin, pull_up=True, bounce_time=0.05)
     
     def button_await_confirm(self, state:bool) -> None:
         self.await_confirm = state
@@ -68,7 +68,7 @@ class ButtonManager:
     async def _confirm_press_advanced(self):
         self.button.when_pressed = None
         hold_threshold = 3.0  # seconds
-        double_press_window = 0.5
+        double_press_window = 0.7
         polling_interval = 0.01
         elapsed = 0.0
 
@@ -103,30 +103,38 @@ class ButtonManager:
         # Released early — check for second press (double-press)
         self.cmd.terminate_current_playback(proc)
         self.cmd.resume_player()
-        
-        wait_start = time.time()
-        while time.time() - wait_start < double_press_window:
-            if self.button.is_pressed:
-                press_start = time.time()
-                while self.button.is_pressed:
-                    await asyncio.sleep(0.01)
-                press_duration = time.time() - press_start
-                if press_duration < 0.15:
-                    print("Double press — delete track")
-                    self.cmd.led.start_deleted_led_seq(1.5)
-                    self.cmd.pause_player()
-                    self.cmd.stop_confirmation_loop()
-                    self.cmd.delete_recording()
-                    self.cmd.resume_player()
-                    self.await_confirm = False
-                    break
-                else:
-                    print("Double press not acknoledged")
-            await asyncio.sleep(0.01)
 
 
-        self.button.when_pressed = self.button_interaction_wrapper
+        if await self._wait_for_second_press(double_press_window):
+            print("Double press — delete track")
+            self.cmd.led.start_deleted_led_seq(1.5)
+            self.cmd.pause_player()
+            self.cmd.stop_confirmation_loop()
+            self.cmd.delete_recording()
+            self.cmd.resume_player()
+            self.await_confirm = False
+        else:
+            print("Double press not acknowledged")
 
+    async def _wait_for_second_press(self, timeout: float) -> bool:
+        second_press_event = asyncio.Event()
+
+        def on_second_press():
+            second_press_event.set()
+
+        self.button.when_pressed = on_second_press
+
+        try:
+            await asyncio.wait_for(second_press_event.wait(), timeout=timeout)
+            press_start = time.time()
+            while self.button.is_pressed:
+                await asyncio.sleep(0.01)
+            press_duration = time.time() - press_start
+            return press_duration < 0.15
+        except asyncio.TimeoutError:
+            return False
+        finally:
+            self.button.when_pressed = self.button_interaction_wrapper
 
     def button_interaction_wrapper(self):
 
@@ -134,7 +142,6 @@ class ButtonManager:
         # handle await stuff in new coroutine
             if self.await_confirm:
                 self.btn_interaction_resolver = asyncio.run_coroutine_threadsafe(self._confirm_press_advanced(), self.event_loop)
-
 
             else:
                 self.btn_interaction_resolver = asyncio.run_coroutine_threadsafe(self._handle_button_press(), self.event_loop)
