@@ -57,11 +57,15 @@ class CmdRegistry:
         self.play_sound = player.play_sound
         self.get_rec_buffer = recorder.get_rec_buffer
         self.pause_player = player.pause_player
+        self.terminate_current_playback = player.terminate_current_playback
         self.resume_player = player.resume_player
+        self.stop_player = player.stop_player
+        self.stop_confirmation_loop = player.stop_confirmation_loop
         self.skip_player = player.skip_player
         self.extend_buffer = player.extend_buffer
         self.playback_hold_confirm = player.playback_hold_confirm
         self.start_confirmation = player.start_confirmation
+        self.delete_recording = recorder.delete_recording
 
         self.recording_led_on = led.recording_led_on
         self.replay_led_on = led.replay_led_on

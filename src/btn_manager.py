@@ -70,22 +70,30 @@ class ButtonManager:
         polling_interval = 0.01
         elapsed = 0.0
 
-        self.cmd.playback_hold_confirm()
+        proc = self.cmd.playback_hold_confirm()
         while self.button.is_pressed and elapsed < hold_threshold:
             await asyncio.sleep(polling_interval)
             elapsed += polling_interval
 
 
         if elapsed >= hold_threshold:
-            self.cmd.stop_player()
+            # to terminate the confirmation loop, but should not affect original loop
+            self.cmd.stop_confirmation_loop()
+
+            # because player stopped in cmd.playback_hold_confirm() and player pause is affecting original play forever loop
             self.cmd.resume_player()
-            print("Confirmed Track")
+            self.cmd.terminate_current_playback(proc)
+            
+            # Reset button.when_pressed
             self.button.when_pressed = self.button_interaction_wrapper
             # confirmed recording. extend with current recording
+            print("Confirmed Track")
             self.cmd.extend_buffer()
+            # disable conrigm_press path in interaction_wrapper
             self.await_confirm = False
             return
         else:
+            self.cmd.terminate_current_playback(proc)
             self.cmd.resume_player()
             elapsed = 0.0
             while not self.button.is_pressed and elapsed < 0.5:
@@ -99,7 +107,13 @@ class ButtonManager:
                     elapsed += polling_interval
                 
                 if not self.button.is_pressed:
-                    print("Delete Track")
+
+                    self.await_confirm = False
+                    self.cmd.stop_confirmation_loop()
+                    self.cmd.delete_recording()
+                    self.cmd.resume_player()
+
+                    
             self.button.when_pressed = self.button_interaction_wrapper  
 
 

@@ -7,6 +7,8 @@ import numpy as np
 from scipy.io import wavfile
 from scipy.signal import butter, lfilter
 from typing import TYPE_CHECKING
+import threading
+import asyncio
 
 if TYPE_CHECKING:
     from cmd_typing import CmdTyping
@@ -62,6 +64,15 @@ class Recorder:
         print(f"Found {count} existing recordings.")
         return recorded_files
 
+    def delete_recording(self, filename = None):
+        if filename is None:
+            filename = self.current_filename
+
+        if os.path.exists(filename):
+            os.remove(filename)
+            print(f"Deleted file: {filename}")
+        else:
+            print(f"File not exist: {filename}")
 
     def reset_recordings(self):
         
@@ -127,7 +138,6 @@ class Recorder:
     def stop_recording(self):
         """Stops the arecord process."""
 
-        self.cmd.button_await_confirm(True)
         if self.recording_process is not None:
             print(f"Stopping recording (PID: {self.recording_process.pid})...")
             try:
@@ -141,7 +151,7 @@ class Recorder:
                     self.recording_process.kill()
 
                 # Wait for the process to actually finish and retrieve output/errors
-                stdout, stderr = self.recording_process.communicate(timeout=5) 
+                stdout, stderr = self.recording_process.communicate(timeout=2) 
 
                 print(f"Recording stopped. File saved: {self.current_filename}")
                 if stderr:
@@ -175,7 +185,9 @@ class Recorder:
                 #! Replace with confirmation of recording
                 print("Start confrimation phase")
                 self.cmd.led_off()
-                self.cmd.start_confirmation(self.current_filename)
+                
+                self.confirm()
+                #self.cmd.start_confirmation(self.current_filename)
 
 
         else:
@@ -184,6 +196,17 @@ class Recorder:
         self.cmd.resume_player()
         #self.cmd.start()
 
+    def confirm(self):
+        self.cmd.button_await_confirm(True)
+
+        thread = self.cmd.start_confirmation(self.current_filename)
+
+        def _watch():
+            thread.join()
+            self.cmd.button_await_confirm(False)
+            self.cmd.resume_player()
+
+        threading.Thread(target=_watch, daemon=True).start()
     
 
     def check_len(self, duration, threshold = 3.0) -> bool:

@@ -22,8 +22,9 @@ class Player:
         self._pause_event.set()
         self._skip_event = threading.Event()
         self._lock = threading.Lock()
-        self.playing_proc: subprocess.Popen | None = None
+        #self.playing_proc: subprocess.Popen | None = None
         self.confirmation_phase = False
+        self._stop_confirmation = threading.Event()
 
 
     def inject_cmd(self, cmd:"CmdTyping"):
@@ -46,9 +47,9 @@ class Player:
         timeout = 20
         # only for beep sound usecase
         # terminate all other playback processes in order to play beep.
-        if self.playing_proc:
-            self.playing_proc.terminate()
-        time.sleep(0.1)
+        # if self.playing_proc:
+        #     self.playing_proc.terminate()
+        # time.sleep(0.1)
 
         print(f"Playing {filename}...")
         try:
@@ -77,20 +78,19 @@ class Player:
         )
         return proc
     
-    def _terminate_current_playback(self):
-        proc = self.playing_proc
 
+    def terminate_current_playback(self, proc: subprocess.Popen):
         if proc and proc.poll() is None:
             try:
                 proc.terminate()
                 proc.wait(timeout=1)
-            except Exception:
-                pass
+            except Exception as err:
+                print(f"Error during terminating playback: {str(err)}")
 
     def pause_player(self):
         # terminate currently playing process
         #self.skip_player()
-        self._terminate_current_playback()
+        #self._terminate_current_playback()
         # pauses playback loop
         self._pause_event.clear()
         print(f"pause player")
@@ -98,30 +98,40 @@ class Player:
     # unpauses playback loop
     def resume_player(self):
         #! experimental
-        #! self._terminate_current_playback()
+        #self.terminate_current_playback()
         self._pause_event.set()
         print(f"resume player")
 
     # completely kills the loop and thus the thread
     def stop_player(self):
-        self._terminate_current_playback()
+        self.pause_player()
         self._stop_event.set()
         print(f"terminating playback")
 
+    def stop_confirmation_loop(self):
+        self.pause_player()
+        self._stop_confirmation.set()
+        print(f"terminating confirmation")
+
     # terminate currently playing process, thus skipping to next loop
     def skip_player(self):
+        if self.confirmation_phase:
+            return
         with self._lock:
             self._skip_event.set()
             self._idx = (self._idx + 1) % len(self.buffer)
 
-        self._terminate_current_playback()
+        #self._terminate_current_playback()
 
         print("invoke button skip")
 
     def playback_hold_confirm(self):
         self.pause_player()
+        time.sleep(0.2)
+        print("Playing sfx/rising_meter")
+        proc = self._play_sound_non_blocking('sfx/rising_meter.wav')
 
-        self._play_sound_non_blocking('sfx/rising_meter.wav')
+        return proc
 
 # loop filename and instruction 
     def _loop_recording_and_instruction(self, filename):
@@ -129,25 +139,45 @@ class Player:
         loop_buffer = [filename, 'sfx/beep.wav']
         index = 0
         self.resume_player()
-        while not self._stop_event.is_set():
+        while not self._stop_confirmation.is_set():
             self._pause_event.wait()
             file = loop_buffer[index]
-            self.playing_proc = self._play_sound_non_blocking(file)
-            while self.playing_proc and self.playing_proc.poll() is None:
-                time.sleep(0.1)
+            proc = self._play_sound_non_blocking(file)
 
-            self.playing_proc = None
+            while True:
+
+                if proc is None or proc.poll() is not None:
+                    break
+
+                if not self._pause_event.is_set():
+                    self.terminate_current_playback(proc)
+                    break
+                time.sleep(.1)
+
+
+            # while self.playing_proc and self.playing_proc.poll() is None:
+            #     # combat race condition when pause has been invoced before self.playing_proc is assigned the new playing process
+            #     if not self._pause_event.is_set():
+            #         self._terminate_current_playback()
+            #         break
+            #     time.sleep(0.1)
 
             index = (index + 1) % 2
+            time.sleep(1)
 
-        self._stop_event.clear()
+        self._stop_confirmation.clear()
         self.confirmation_phase = False
         self.cmd.button_await_confirm(False)
 
     def start_confirmation(self, filename):
-        self._terminate_current_playback()
+
+        if self.confirmation_phase:
+            return
+
         self.confirmation_phase = True
-        threading.Thread(target=self._loop_recording_and_instruction, args = (filename,), daemon= True).start()
+        thread = threading.Thread(target=self._loop_recording_and_instruction, args = (filename,), daemon= True)
+        thread.start()
+        return thread
         #self._loop_recording_and_instruction(filename)
 
     
@@ -166,17 +196,26 @@ class Player:
             # pick next index
             with self._lock:
                 filename = self.buffer[self._idx]
+            
+            proc = self._play_sound_non_blocking(filename)
 
-            self.playing_proc = self._play_sound_non_blocking(filename)
-
-            # None == Process still running
-            while self.playing_proc and self.playing_proc.poll() is None:
-                # when skipped triggered, then don't need to wait for process to terminate, as it is already terminated by skip
-                if self._skip_event.is_set():
+            while True:
+                if proc is None or proc.poll() is not None:
+                    break
+                if self._skip_event.is_set() or not self._pause_event.is_set():
+                    self.terminate_current_playback(proc=proc)
                     break
                 time.sleep(0.1)
 
-            self.playing_proc = None
+            # # None == Process still running
+            # while self.playing_proc and self.playing_proc.poll() is None:
+            #     # when skipped triggered, then don't need to wait for process to terminate, as it is already terminated by skip
+            #     if self._skip_event.is_set() or not self._pause_event.is_set():
+            #         # combat race cond if skip or pause what triggered before self.playing_proc was assigned to new process
+            #         self._terminate_current_playback()
+            #         break
+            #     time.sleep(0.1)
+
 
             # advance index only if not already advanced by skip
             with self._lock:
