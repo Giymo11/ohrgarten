@@ -5,6 +5,7 @@ import asyncio
 from asyncio import Event
 from concurrent.futures import Future
 from typing import TYPE_CHECKING
+import time
 
 if TYPE_CHECKING:
     from cmd_typing import CmdTyping
@@ -32,7 +33,7 @@ class ButtonManager:
         self.reset_button.when_pressed = cmd.reset_recordings
 
     def _initialize_button(self, pin: int) -> Button:
-        return Button(pin, pull_up=True, bounce_time=0.1)
+        return Button(pin, pull_up=True, bounce_time=0.05)
     
     def button_await_confirm(self, state:bool) -> None:
         self.await_confirm = state
@@ -67,6 +68,7 @@ class ButtonManager:
     async def _confirm_press(self):
         self.button.when_pressed = None
         hold_threshold = 3.0  # seconds
+        double_press_window = 0.5
         polling_interval = 0.01
         elapsed = 0.0
 
@@ -92,29 +94,27 @@ class ButtonManager:
             # disable conrigm_press path in interaction_wrapper
             self.await_confirm = False
             return
-        else:
-            self.cmd.terminate_current_playback(proc)
-            self.cmd.resume_player()
-            elapsed = 0.0
-            while not self.button.is_pressed and elapsed < 0.5:
-                await asyncio.sleep(polling_interval)
-                elapsed += polling_interval
-            
+        # Released early — check for second press (double-press)
+        self.cmd.terminate_current_playback(proc)
+        self.cmd.resume_player()
+        
+        wait_start = time.time()
+        while time.time() - wait_start < double_press_window:
             if self.button.is_pressed:
-                elapsed = 0.0
-                while self.button.is_pressed and elapsed < 0.15:
-                    await asyncio.sleep(polling_interval)
-                    elapsed += polling_interval
-                
-                if not self.button.is_pressed:
-
-                    self.await_confirm = False
+                press_start = time.time()
+                while self.button.is_pressed:
+                    await asyncio.sleep(0.01)
+                press_duration = time.time() - press_start
+                if press_duration < 0.15:
+                    print("Double press — delete track")
                     self.cmd.stop_confirmation_loop()
                     self.cmd.delete_recording()
                     self.cmd.resume_player()
+                    self.await_confirm = False
+                    break
+            await asyncio.sleep(0.01)
 
-                    
-            self.button.when_pressed = self.button_interaction_wrapper  
+        self.button.when_pressed = self.button_interaction_wrapper
 
 
     def button_interaction_wrapper(self):
