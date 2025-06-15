@@ -64,6 +64,50 @@ class ButtonManager:
             self.cmd.recorder.stop_recording()
 
 
+    async def _confirm_or_delete(self):
+        self.button.when_pressed = None  # disable reentry
+        hold_threshold = 3.0
+        short_threshold = 0.23
+        polling_interval = 0.01
+
+        press_start = time.monotonic()
+        proc = self.cmd.player.playback_hold_confirm()
+        led_task = self.cmd.led.start_confirm_led_seq(hold_threshold)
+
+        # Wait while button is held
+        while self.button.is_pressed:
+            await asyncio.sleep(polling_interval)
+
+        press_duration = time.monotonic() - press_start
+
+        self.cmd.player.terminate_current_playback(proc)
+        self.cmd.led.stop_led_task(led_task)
+        self.cmd.player.resume()
+
+        if press_duration >= hold_threshold:
+            # Confirm
+            print("Confirmed via hold")
+            self.cmd.player.stop_confirmation_loop()
+            self.cmd.player.extend_buffer()
+            self.cmd.led.start_delayed_led_off(1)
+            self.await_confirm = False
+
+        elif press_duration <= short_threshold:
+            # Delete
+            print("Deleted via short press")
+            self.cmd.player.stop_confirmation_loop()
+            self.cmd.recorder.delete_recording()
+            self.cmd.led.start_deleted_led_seq(1.5)
+            self.cmd.player.pause()
+            self.cmd.player.resume()
+            self.await_confirm = False
+
+        else:
+            # In-between press, do nothing
+            print(f"Ignored press duration: {press_duration:.2f}s")
+        
+        self.button.when_pressed = self.button_interaction_wrapper
+
     async def _confirm_press_advanced(self):
         self.button.when_pressed = None
         hold_threshold = 3.0  # seconds
@@ -140,7 +184,7 @@ class ButtonManager:
         if self.btn_interaction_resolver is None or self.btn_interaction_resolver.done():
         # handle await stuff in new coroutine
             if self.await_confirm:
-                self.btn_interaction_resolver = asyncio.run_coroutine_threadsafe(self._confirm_press_advanced(), self.event_loop)
+                self.btn_interaction_resolver = asyncio.run_coroutine_threadsafe(self._confirm_or_delete(), self.event_loop)
 
             else:
                 self.btn_interaction_resolver = asyncio.run_coroutine_threadsafe(self._handle_button_press(), self.event_loop)
