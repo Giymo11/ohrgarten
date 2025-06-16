@@ -172,7 +172,8 @@ class Player:
 
 
             index = (index + 1) % 2
-            self.cmd.led.led_off()
+            if self._pause_event.is_set():
+                self.cmd.led.led_off()
             for _ in range(10):
                 if self._stop_confirmation.is_set():
                     break
@@ -215,11 +216,14 @@ class Player:
             #     continue
 
             # play question or recroding
+            
             if not self.buffer or question_counter % nth_question_repeat == 0:
                 filename = self.question
+                led_color = self.cmd.led.instruction_led_on()
             else:
                 with self._lock:
                     filename = self.buffer[self._idx]
+                    led_color = self.cmd.led.replay_led_on()
                 
             proc = self._play_sound_non_blocking(filename)
 
@@ -230,7 +234,9 @@ class Player:
                     self.terminate_current_playback(proc=proc)
                     break
                 time.sleep(0.1)
-            
+
+
+            self.cmd.led.led_off()
             question_counter = question_counter + 1
 
             with self._lock:

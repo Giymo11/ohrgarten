@@ -30,7 +30,8 @@ class LedManager:
             print("Led not configured.")
         
         self.event_loop: asyncio.AbstractEventLoop = event_loop
-        self.event_loop.create_task(self.startup_sequence())
+        # Debug purpose
+        #self.event_loop.create_task(self.startup_sequence())
 
     async def startup_sequence(self):
         if not self.led:
@@ -54,8 +55,8 @@ class LedManager:
         task = self.event_loop.create_task(self.led_off_after_duration(duration))
         return task
 
-    def start_deleted_led_seq(self, duration: float):
-        task = self.event_loop.create_task(self.deleted_led(duration))
+    def start_deleted_led_seq(self, duration: float, color = RED):
+        task = self.event_loop.create_task(self.deleted_led(duration, color))
         return task
 
     def start_confirm_led_seq(self, duration: float):
@@ -98,10 +99,10 @@ class LedManager:
             self.led[0] = (r, g, b)
             await asyncio.sleep(interval)
 
-    async def deleted_led(self, duration):
+    async def deleted_led(self, duration, color = RED):
         if not self.led:
             return
-        color = (20, 0, 0)
+        
         steps = 20
         interval = duration/ steps
         try:
@@ -123,16 +124,19 @@ class LedManager:
             return
         self.led[0] = RED
         print("LED RED")
+        return RED
 
     def replay_led_on(self):
         if not self.led:
             return
-        self.led[0] = GREEN
+        self.led[0] = MAGENTA
+        return MAGENTA
     
     def instruction_led_on(self):
         if not self.led:
             return
         self.led[0] = BLUE
+        return BLUE
     
     def led_off(self):
         if not self.led:

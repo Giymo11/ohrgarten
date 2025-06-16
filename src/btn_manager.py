@@ -94,6 +94,10 @@ class ButtonManager:
             self.cmd.player.stop_confirmation_loop()
             self.cmd.player.extend_buffer()
             self.cmd.led.start_delayed_led_off(1)
+            self.cmd.player.pause()
+            time.sleep(1)
+            self.cmd.player.resume()
+
             self.await_confirm = False
 
         elif press_duration <= short_threshold:
@@ -104,6 +108,8 @@ class ButtonManager:
             self.cmd.recorder.delete_recording()
             self.cmd.led.start_deleted_led_seq(1.5)
             self.cmd.player.pause()
+
+            time.sleep(1)
             self.cmd.player.resume()
             self.await_confirm = False
 
