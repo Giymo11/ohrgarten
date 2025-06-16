@@ -11,6 +11,9 @@ if TYPE_CHECKING:
 RED = (20, 0, 0)
 GREEN = (0, 20, 0)
 BLUE = (0, 0, 20)
+YELLOW = (10, 10, 0)
+CYAN = (0, 10, 10)
+MAGENTA = (10, 0, 10)
 OFF = (0, 0, 0)
 
 class LedManager:
@@ -77,8 +80,9 @@ class LedManager:
     async def confirm_led(self, duration):
         if not self.led:
             return
-        color = (0, 0, 1)
-        steps = 30
+        #Cyan
+        color = (0, 1, 1)
+        steps = 10
         interval = duration / steps
         try:
             await self.led_rising(color=color, steps = steps, interval=interval)

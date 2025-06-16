@@ -131,11 +131,19 @@ class Player:
     def playback_hold_confirm(self):
         self.pause()
         time.sleep(0.2)
-        print("Playing sfx/rising_meter")
+        print("Playing sfx/rising.wav")
         proc = self._play_sound_non_blocking('sfx/rising.wav')
 
         return proc
+    
+    def playback_delete(self):
+        self.pause()
+        time.sleep(0.2)
+        print("Playing sfx/delete.wav")
+        proc = self._play_sound_non_blocking('sfx/delete.wav')
 
+        return proc
+    
     # loop confirmation after recording
     def _loop_recording_and_instruction(self, filename):
         print("Loop confirmation phase")
@@ -145,6 +153,11 @@ class Player:
         while not self._stop_confirmation.is_set():
             self._pause_event.wait()
             file = loop_buffer[index]
+            if index:
+                self.cmd.led.instruction_led_on()
+            else:
+                self.cmd.led.replay_led_on()
+
             proc = self._play_sound_non_blocking(file)
 
             while True:
@@ -159,6 +172,7 @@ class Player:
 
 
             index = (index + 1) % 2
+            self.cmd.led.led_off()
             for _ in range(10):
                 if self._stop_confirmation.is_set():
                     break
@@ -184,10 +198,10 @@ class Player:
         question_counter = 0
         while not self._stop_event.is_set():
 
-            # for _ in range(10):
-            #     if self._skip_event.is_set():
-            #         break
-            #     time.sleep(0.1)
+            for _ in range(10):
+                if self._skip_event.is_set():
+                    break
+                time.sleep(0.1)
 
 
             # waits until resume_player has been called by setting _pause_event.set()

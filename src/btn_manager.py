@@ -99,6 +99,7 @@ class ButtonManager:
         elif press_duration <= short_threshold:
             # Delete
             print("Deleted via short press")
+            self.cmd.player.playback_delete()
             self.cmd.player.stop_confirmation_loop()
             self.cmd.recorder.delete_recording()
             self.cmd.led.start_deleted_led_seq(1.5)
@@ -112,6 +113,7 @@ class ButtonManager:
         
         self.button.when_pressed = self.button_interaction_wrapper
 
+    # double press too complex timing wise
     async def _confirm_press_advanced(self):
         self.button.when_pressed = None
         hold_threshold = 3.0  # seconds
@@ -184,7 +186,8 @@ class ButtonManager:
             self.button.when_pressed = self.button_interaction_wrapper
 
     def button_interaction_wrapper(self):
-
+        
+        self.cmd.led.led_off()
         if self.btn_interaction_resolver is None or self.btn_interaction_resolver.done():
         # handle await stuff in new coroutine
             if self.await_confirm:
