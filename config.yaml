@@ -24,6 +24,8 @@ player_config:
     - "aplay"
     - "-D"
     - "plughw:2,0" # Use default output device
+  VOICE_PATH: voice
+  QUESTION: smartphones.wav
 
 led_config:
 # if no led is implemented in the device, leave the values blank or change them to None

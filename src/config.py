@@ -17,6 +17,8 @@ class RecordingConfig:
 @dataclass
 class PlayerConfig:
     APLAY_CMD:  Final[List[str]]
+    QUESTION: Final[str]
+    VOICE_PATH: Final[str]
 
 @dataclass
 class LedConfig:

@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from cmd_typing import CmdTyping
 
-
+# every 7th playback is the original creators question defined by ply_cfg.QUESTION
+nth_question_repeat = 7
 
 class Player:
 
@@ -25,6 +26,8 @@ class Player:
         #self.playing_proc: subprocess.Popen | None = None
         self.confirmation_phase = False
         self._stop_confirmation = threading.Event()
+        self.question = ply_cfg.VOICE_PATH + '/' + ply_cfg.QUESTION 
+
 
 
     def inject_cmd(self, cmd:"CmdTyping"):
@@ -129,7 +132,7 @@ class Player:
         self.pause()
         time.sleep(0.2)
         print("Playing sfx/rising_meter")
-        proc = self._play_sound_non_blocking('sfx/rising_meter.wav')
+        proc = self._play_sound_non_blocking('sfx/rising.wav')
 
         return proc
 
@@ -178,22 +181,32 @@ class Player:
 
     
     def play_forever(self):
-        
+        question_counter = 0
         while not self._stop_event.is_set():
+
+            # for _ in range(10):
+            #     if self._skip_event.is_set():
+            #         break
+            #     time.sleep(0.1)
+
+
             # waits until resume_player has been called by setting _pause_event.set()
             self._pause_event.wait()
             if self.confirmation_phase:
                 time.sleep(0.5)
                 continue
-            if not self.buffer:
-                time.sleep(0.1)
-                continue
+
+            # if not self.buffer:
+            #     time.sleep(0.1)
+            #     continue
+
+            # play question or recroding
+            if not self.buffer or question_counter % nth_question_repeat == 0:
+                filename = self.question
+            else:
+                with self._lock:
+                    filename = self.buffer[self._idx]
                 
-            # TODO!: fix random playback after pressing skip
-            # pick next index
-            with self._lock:
-                filename = self.buffer[self._idx]
-            
             proc = self._play_sound_non_blocking(filename)
 
             while True:
@@ -203,12 +216,18 @@ class Player:
                     self.terminate_current_playback(proc=proc)
                     break
                 time.sleep(0.1)
-
+            
+            question_counter = question_counter + 1
 
             with self._lock:
                 if self._skip_event.is_set():
                     self._skip_event.clear()
                     continue
+                # do not advance index if the question was repeated
+                if filename == self.question:
+                    continue
                 self._idx = (self._idx + 1) % len(self.buffer)
+            
+            
            
            
