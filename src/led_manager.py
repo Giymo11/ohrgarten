@@ -77,7 +77,7 @@ class LedManager:
     async def confirm_led(self, duration):
         if not self.led:
             return
-        color = (0, 1, 0)
+        color = (0, 0, 1)
         steps = 30
         interval = duration / steps
         try:
@@ -134,6 +134,11 @@ class LedManager:
         if not self.led:
             return
         self.led[0] = OFF
+
+    def led_on(self, color = (10, 10, 10)):
+        if not self.led:
+            return
+        self.led[0] = color
 
     def shutdown_neopixel(self):
         self.led.fill((0, 0, 0))

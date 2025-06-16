@@ -66,7 +66,8 @@ class ButtonManager:
 
     async def _confirm_or_delete(self):
         self.button.when_pressed = None  # disable reentry
-        hold_threshold = 3.0
+        confirm_led_threshold = 2.5
+        hold_threshold = 2.8
         short_threshold = 0.23
         polling_interval = 0.01
 
@@ -77,6 +78,8 @@ class ButtonManager:
         # Wait while button is held
         while self.button.is_pressed:
             await asyncio.sleep(polling_interval)
+            if time.monotonic() - press_start > confirm_led_threshold:
+                self.cmd.led.led_on((0, 20, 0))
 
         press_duration = time.monotonic() - press_start
 
@@ -87,6 +90,7 @@ class ButtonManager:
         if press_duration >= hold_threshold:
             # Confirm
             print("Confirmed via hold")
+
             self.cmd.player.stop_confirmation_loop()
             self.cmd.player.extend_buffer()
             self.cmd.led.start_delayed_led_off(1)
