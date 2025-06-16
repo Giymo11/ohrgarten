@@ -172,8 +172,7 @@ class Player:
 
 
             index = (index + 1) % 2
-            if self._pause_event.is_set():
-                self.cmd.led.led_off()
+            self.cmd.led.led_off()
             for _ in range(10):
                 if self._stop_confirmation.is_set():
                     break
@@ -235,8 +234,8 @@ class Player:
                     break
                 time.sleep(0.1)
 
-
-            self.cmd.led.led_off()
+            if self._pause_event.is_set():
+                self.cmd.led.led_off()
             question_counter = question_counter + 1
 
             with self._lock:
