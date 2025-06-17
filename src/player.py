@@ -147,7 +147,7 @@ class Player:
     # loop confirmation after recording
     def _loop_recording_and_instruction(self, filename):
         print("Loop confirmation phase")
-        loop_buffer = [filename, 'sfx/save.wav']
+        loop_buffer = [filename, 'voice/save.wav']
         index = 0
         self.resume()
         while not self._stop_confirmation.is_set():
@@ -165,7 +165,7 @@ class Player:
                 if proc is None or proc.poll() is not None:
                     break
 
-                if not self._pause_event.is_set():
+                if not self._pause_event.is_set() or self._stop_confirmation.is_set():
                     self.terminate_current_playback(proc)
                     break
                 time.sleep(.1)
