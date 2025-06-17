@@ -149,6 +149,8 @@ class LedManager:
         self.led[0] = color
 
     def shutdown_neopixel(self):
+        if not self.led:
+            return
         self.led.fill((0, 0, 0))
         self.led.show()
         print(f"Freeing up LED gpio pin {self.led_pin}")

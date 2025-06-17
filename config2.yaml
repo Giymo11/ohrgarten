@@ -1,9 +1,9 @@
 button_config:
-  BUTTON_PIN: 17
-  RST_BUTTON_PIN: 9
+  BUTTON_PIN: 22
+  RST_BUTTON_PIN: 27
 
 recorder_config:
-  RECORDING_PATH: recordings
+  RECORDING_PATH: recordings2
   SFX_PATH: sfx
   BEEP_FILE: beep.wav
 
@@ -15,7 +15,7 @@ recorder_config:
     - "-t"
     - "wav"  # Save as WAV file type
     - "-D"
-    - "plughw:2,0" # find from 'arecord -l'
+    - "plughw:3,0" # find from 'arecord -l'
     - "-d"
     - "20" # limit to 20 seconds per recording
 
@@ -23,11 +23,11 @@ player_config:
   APLAY_CMD:
     - "aplay"
     - "-D"
-    - "plughw:2,0" # Use default output device
+    - "plughw:3,0" # Use default output device
   VOICE_PATH: voice
-  QUESTION: smartphones.wav
+  QUESTION: leiwand.wav
 
 led_config:
 # if no led is implemented in the device, leave the values blank or change them to None
-  DATA_PIN: "D18" #only following pins (GPIO number) allowed: D10, D12, D18 or D21
-  PIXEL_NUM: 1
+  DATA_PIN: #only following pins (GPIO number) allowed: D10, D12, D18 or D21
+  PIXEL_NUM:

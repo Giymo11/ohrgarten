@@ -9,11 +9,16 @@ import asyncio
 import yaml
 from config import Config, ButtonConfig, RecordingConfig, PlayerConfig, LedConfig
 import threading
+import sys
 
 # Initialize
 
+conf = sys.argv[1]
+if not conf:
+    conf ='config.yaml'
+
 # load config
-conf:dict = yaml.safe_load(open("config.yaml"))
+conf:dict = yaml.safe_load(open(conf))
 settings = Config(
     btn_cfg = ButtonConfig(**conf.get("button_config",{})),
     rec_cfg = RecordingConfig(**conf.get("recorder_config",{})),
